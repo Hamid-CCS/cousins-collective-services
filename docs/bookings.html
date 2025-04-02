@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CCS Bookings Manager</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    h1 {
+      color: #4CAF50;
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .booking-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 20px;
+    }
+    .booking-card {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .booking-card h3 {
+      margin-top: 0;
+      color: #2196F3;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 10px;
+    }
+    .booking-card p {
+      margin: 5px 0;
+    }
+    .booking-card .label {
+      font-weight: bold;
+    }
+    .no-bookings {
+      text-align: center;
+      padding: 50px;
+      color: #777;
+    }
+    .back-link {
+      display: block;
+      text-align: center;
+      margin: 20px 0;
+      color: #2196F3;
+      text-decoration: none;
+    }
+    .back-link:hover {
+      text-decoration: underline;
+    }
+    .controls {
+      text-align: center;
+      margin: 20px 0;
+    }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      margin: 0 5px;
+    }
+    button.clear {
+      background-color: #f44336;
+    }
+    .timestamp {
+      font-size: 0.8em;
+      color: #777;
+      margin-top: 10px;
+    }
+    .password-screen {
+      max-width: 400px;
+      margin: 100px auto;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+    .password-input {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0 20px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    .error-message {
+      color: #f44336;
+      margin-top: 10px;
+      display: none;
+    }
+    .export-btn {
+      background-color: #2196F3;
+    }
+  </style>
+</head>
+<body>
+  <div id="passwordScreen" class="password-screen">
+    <h1>CCS Bookings Manager</h1>
+    <p>Enter the admin password to view bookings:</p>
+    <input type="password" id="passwordInput" class="password-input" placeholder="Password">
+    <button id="loginBtn">Login</button>
+    <p id="errorMessage" class="error-message">Incorrect password. Please try again.</p>
+  </div>
+  
+  <div id="bookingsManager" style="display: none;">
+    <h1>Cousins Collective Services - Bookings Manager</h1>
+    
+    <div class="controls">
+      <button id="refreshBtn">Refresh Bookings</button>
+      <button id="exportBtn" class="export-btn">Export to CSV</button>
+      <button id="clearBtn" class="clear">Clear All Bookings</button>
+    </div>
+    
+    <div id="bookingList" class="booking-list">
+      <div class="no-bookings">No bookings found.</div>
+    </div>
+    
+    <a href="/" class="back-link">← Back to Website</a>
+  </div>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const passwordScreen = document.getElementById('passwordScreen');
+      const bookingsManager = document.getElementById('bookingsManager');
+      const passwordInput = document.getElementById('passwordInput');
+      const loginBtn = document.getElementById('loginBtn');
+      const errorMessage = document.getElementById('errorMessage');
+      const bookingList = document.getElementById('bookingList');
+      const refreshBtn = document.getElementById('refreshBtn');
+      const clearBtn = document.getElementById('clearBtn');
+      const exportBtn = document.getElementById('exportBtn');
+      
+      // Simple password protection
+      const adminPassword = "ccs2024admin"; // Change this to your desired password
+      
+      loginBtn.addEventListener('click', function() {
+        if (passwordInput.value === adminPassword) {
+          passwordScreen.style.display = 'none';
+          bookingsManager.style.display = 'block';
+          displayBookings();
+        } else {
+          errorMessage.style.display = 'block';
+        }
+      });
+      
+      passwordInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+          loginBtn.click();
+        }
+      });
+      
+      // Check if password already entered in this session
+      if (sessionStorage.getItem('ccsAdminLoggedIn') === 'true') {
+        passwordScreen.style.display = 'none';
+        bookingsManager.style.display = 'block';
+        displayBookings();
+      }
+      
+      function displayBookings() {
+        // Mark as logged in for this session
+        sessionStorage.setItem('ccsAdminLoggedIn', 'true');
+        
+        const bookings = JSON.parse(localStorage.getItem('ccsBookings') || '[]');
+        
+        if (bookings.length === 0) {
+          bookingList.innerHTML = '<div class="no-bookings">No bookings found.</div>';
+          return;
+        }
+        
+        // Sort bookings by date, newest first
+        bookings.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        
+        bookingList.innerHTML = '';
+        
+        bookings.forEach(booking => {
+          const bookingCard = document.createElement('div');
+          bookingCard.className = 'booking-card';
+          
+          // Format the date for display
+          let formattedDate = 'Invalid date';
+          try {
+            const date = new Date(booking.date);
+            formattedDate = date.toLocaleDateString('en-US', {
+              weekday: 'long',
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric'
+            });
+          } catch (e) {
+            console.error('Date formatting error:', e);
+          }
+          
+          bookingCard.innerHTML = `
+            <h3>${booking.service} for ${booking.name}</h3>
+            <p><span class="label">Phone:</span> ${booking.phone}</p>
+            <p><span class="label">Email:</span> ${booking.email || 'Not provided'}</p>
+            <p><span class="label">Date:</span> ${formattedDate}</p>
+            <p><span class="label">Time:</span> ${booking.time || '10:00 AM'}</p>
+            <p><span class="label">Address:</span> ${booking.address}</p>
+            <p><span class="label">Details:</span> ${booking.details || 'No details provided'}</p>
+            <p><span class="timestamp">Booked on: ${new Date(booking.timestamp).toLocaleString()}</span></p>
+          `;
+          
+          bookingList.appendChild(bookingCard);
+        });
+      }
+      
+      refreshBtn.addEventListener('click', displayBookings);
+      
+      clearBtn.addEventListener('click', function() {
+        if (confirm('Are you sure you want to clear all bookings? This cannot be undone.')) {
+          localStorage.removeItem('ccsBookings');
+          displayBookings();
+        }
+      });
+      
+      exportBtn.addEventListener('click', function() {
+        const bookings = JSON.parse(localStorage.getItem('ccsBookings') || '[]');
+        
+        if (bookings.length === 0) {
+          alert('No bookings to export.');
+          return;
+        }
+        
+        // Create CSV content
+        let csvContent = 'Name,Phone,Email,Service,Date,Time,Address,Details,Timestamp\n';
+        
+        bookings.forEach(booking => {
+          const row = [
+            booking.name,
+            booking.phone,
+            booking.email || 'Not provided',
+            booking.service,
+            booking.date,
+            booking.time || '10:00 AM',
+            booking.address,
+            (booking.details || 'No details provided').replace(/,/g, ';'),
+            booking.timestamp
+          ];
+          
+          // Properly escape CSV fields
+          const escapedRow = row.map(field => {
+            const stringField = String(field);
+            // If field contains commas, quotes, or newlines, enclose in quotes
+            if (stringField.includes(',') || stringField.includes('"') || stringField.includes('\n')) {
+              return `"${stringField.replace(/"/g, '""')}"`;
+            }
+            return stringField;
+          });
+          
+          csvContent += escapedRow.join(',') + '\n';
+        });
+        
+        // Create download link
+        const encodedUri = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvContent);
+        const link = document.createElement('a');
+        link.setAttribute('href', encodedUri);
+        link.setAttribute('download', `ccs-bookings-${new Date().toISOString().slice(0,10)}.csv`);
+        document.body.appendChild(link);
+        
+        // Trigger download and remove link
+        link.click();
+        document.body.removeChild(link);
+      });
+    });
+  </script>
+</body>
+</html>
