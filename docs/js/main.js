@@ -107,42 +107,67 @@ document.addEventListener('DOMContentLoaded', function() {
         
         console.log('Sending booking to Google Apps Script:', booking);
         
-        // Send to Google Apps Script Web App - replace with your actual Apps Script URL
-        const response = await fetch('https://script.google.com/macros/s/AKfycbx20HiX7gqCZI9_4d4k_TTXsTpCUxzZGAMa7HY0R1IvAphCWh00g_tYyn12QxJIvlww/exec', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(booking)
-        });
-        
-        console.log('Response status:', response.status);
-        
-        // Handle the response
-        if (response.ok) {
-          const result = await response.json();
-          console.log('Booking saved to Google Calendar and Sheets:', result);
+        // Send to Google Apps Script Web App
+        try {
+          const scriptUrl = 'https://script.google.com/macros/s/AKfycbx20HiX7gqCZI9_4d4k_TTXsTpCUxzZGAMa7HY0R1IvAphCWh00g_tYyn12QxJIvlww/exec';
+          console.log('Using Apps Script URL:', scriptUrl);
           
-          // Mark as synced in localStorage
-          const savedBookings = JSON.parse(localStorage.getItem('ccsBookings') || '[]');
-          const lastIndex = savedBookings.length - 1;
-          if (lastIndex >= 0) {
-            savedBookings[lastIndex].syncedWithGoogle = true;
-            savedBookings[lastIndex].status = 'new';
-            localStorage.setItem('ccsBookings', JSON.stringify(savedBookings));
+          const response = await fetch(scriptUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(booking),
+            mode: 'cors' // Explicitly set CORS mode
+          });
+          
+          console.log('Response status:', response.status);
+          console.log('Response headers:', [...response.headers].map(pair => pair.join(': ')).join('\n'));
+          
+          // Handle the response
+          const responseText = await response.text();
+          console.log('Raw response text:', responseText);
+          
+          let result;
+          try {
+            result = JSON.parse(responseText);
+            console.log('Parsed response:', result);
+          } catch (jsonError) {
+            console.error('Failed to parse response as JSON:', jsonError);
+            throw new Error('Invalid response format');
           }
           
-          // Show success confirmation
-          const confirmMessage = document.querySelector('.confirmation-content p:first-of-type');
-          confirmMessage.textContent = "We'll call or text you within 24 hours to confirm your appointment.";
-        } else {
-          const errorText = await response.text();
-          console.warn('Warning: Booking saved locally but cloud sync failed');
-          console.error('Error details:', errorText);
+          if (response.ok && result.success) {
+            console.log('Booking saved to Google Calendar and Sheets:', result);
+            
+            // Mark as synced in localStorage
+            const savedBookings = JSON.parse(localStorage.getItem('ccsBookings') || '[]');
+            const lastIndex = savedBookings.length - 1;
+            if (lastIndex >= 0) {
+              savedBookings[lastIndex].syncedWithGoogle = true;
+              savedBookings[lastIndex].status = 'new';
+              localStorage.setItem('ccsBookings', JSON.stringify(savedBookings));
+            }
+            
+            // Show success confirmation
+            const confirmMessage = document.querySelector('.confirmation-content p:first-of-type');
+            confirmMessage.textContent = "We'll call or text you within 24 hours to confirm your appointment.";
+          } else {
+            console.warn('Warning: Booking saved locally but cloud sync failed');
+            console.error('Error details:', result.message || 'Unknown error');
+            console.error('Full response:', result);
+            
+            // Show a different confirmation message
+            const confirmMessage = document.querySelector('.confirmation-content p:first-of-type');
+            confirmMessage.textContent = "Your booking was saved locally. We'll still receive your booking, but please contact us if you don't hear back within 24 hours.";
+          }
+        } catch (error) {
+          console.error('Error during fetch operation:', error);
+          console.error('Error details:', error.message);
+          console.error('Error stack:', error.stack);
           
-          // Show a different confirmation message
-          const confirmMessage = document.querySelector('.confirmation-content p:first-of-type');
-          confirmMessage.textContent = "Your booking was saved locally. We'll still receive your booking, but please contact us if you don't hear back within 24 hours.";
+          // Update UI to inform user
+          alert('Your booking was saved locally, but there was an issue connecting to our system. We will still receive your booking.');
         }
         
         // Show confirmation message regardless of cloud sync status
@@ -152,6 +177,8 @@ document.addEventListener('DOMContentLoaded', function() {
         
       } catch (error) {
         console.error('Error during booking submission:', error);
+        console.error('Error details:', error.message);
+        console.error('Error stack:', error.stack);
         
         // Update UI to inform user
         alert('Your booking was saved locally, but there was an issue connecting to our system. We will still receive your booking.');
