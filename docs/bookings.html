@@ -395,14 +395,17 @@
       performSyncBtn.addEventListener('click', async function() {
         const url = appsScriptUrl.value.trim();
         
-        if (!url || !url.startsWith('https://script.google.com/')) {
+        // Remove any @ symbol at the beginning of the URL if present
+        const cleanUrl = url.startsWith('@') ? url.substring(1) : url;
+        
+        if (!cleanUrl || !cleanUrl.includes('script.google.com/macros/s/')) {
           syncMessage.className = 'sync-message error';
           syncMessage.textContent = 'Please enter a valid Google Apps Script URL';
           return;
         }
         
         // Save the URL for future use
-        localStorage.setItem('ccsAppsScriptUrl', url);
+        localStorage.setItem('ccsAppsScriptUrl', cleanUrl);
         
         // Get bookings that need to be synced
         const bookings = JSON.parse(localStorage.getItem('ccsBookings') || '[]');
@@ -436,7 +439,8 @@
           // Process bookings one by one
           for (const booking of unsynced) {
             try {
-              const response = await fetch(url, {
+              console.log('Syncing booking:', booking);
+              const response = await fetch(cleanUrl, {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',
@@ -444,11 +448,16 @@
                 body: JSON.stringify(booking)
               });
               
+              console.log('Sync response status:', response.status);
+              
               if (response.ok) {
                 // Mark as synced
                 booking.syncedWithGoogle = true;
                 booking.status = booking.status || 'new'; // Add status if not present
                 syncCount++;
+                console.log('Booking synced successfully');
+              } else {
+                console.error('Sync response not OK:', await response.text());
               }
             } catch (error) {
               console.error('Error syncing booking:', error);
@@ -468,6 +477,7 @@
         } catch (error) {
           syncMessage.className = 'sync-message error';
           syncMessage.textContent = `Error: ${error.message}`;
+          console.error('Sync error:', error);
         } finally {
           performSyncBtn.disabled = false;
           performSyncBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Sync Bookings';

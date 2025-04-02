@@ -105,6 +105,8 @@ document.addEventListener('DOMContentLoaded', function() {
         bookings.push(booking);
         localStorage.setItem('ccsBookings', JSON.stringify(bookings));
         
+        console.log('Sending booking to Google Apps Script:', booking);
+        
         // Send to Google Apps Script Web App - replace with your actual Apps Script URL
         const response = await fetch('https://script.google.com/macros/s/AKfycbx0-pw9AkdQRVWuNQDg1h0U6Z-7miD9iyN2Iag39Oc9xbGG2EGbMTF7ZLHw8Sg0GPIQ/exec', {
           method: 'POST',
@@ -114,16 +116,29 @@ document.addEventListener('DOMContentLoaded', function() {
           body: JSON.stringify(booking)
         });
         
+        console.log('Response status:', response.status);
+        
         // Handle the response
         if (response.ok) {
           const result = await response.json();
           console.log('Booking saved to Google Calendar and Sheets:', result);
           
+          // Mark as synced in localStorage
+          const savedBookings = JSON.parse(localStorage.getItem('ccsBookings') || '[]');
+          const lastIndex = savedBookings.length - 1;
+          if (lastIndex >= 0) {
+            savedBookings[lastIndex].syncedWithGoogle = true;
+            savedBookings[lastIndex].status = 'new';
+            localStorage.setItem('ccsBookings', JSON.stringify(savedBookings));
+          }
+          
           // Show success confirmation
           const confirmMessage = document.querySelector('.confirmation-content p:first-of-type');
           confirmMessage.textContent = "We'll call or text you within 24 hours to confirm your appointment.";
         } else {
+          const errorText = await response.text();
           console.warn('Warning: Booking saved locally but cloud sync failed');
+          console.error('Error details:', errorText);
           
           // Show a different confirmation message
           const confirmMessage = document.querySelector('.confirmation-content p:first-of-type');

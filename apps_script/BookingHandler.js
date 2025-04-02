@@ -141,22 +141,71 @@ function processBooking(booking) {
  */
 function addToCalendar(booking) {
   try {
-    // Try using primary calendar if the configured ID doesn't work
+    console.log("Starting calendar integration...");
+    
+    // First try to get the specified calendar
     let calendar;
     try {
+      console.log("Looking for calendar with ID:", CONFIG.CALENDAR_ID);
       calendar = CalendarApp.getCalendarById(CONFIG.CALENDAR_ID);
+      if (calendar) {
+        console.log("Found calendar:", calendar.getName());
+      } else {
+        console.log("Calendar not found with ID:", CONFIG.CALENDAR_ID);
+      }
     } catch (e) {
-      console.log("Couldn't find calendar with ID, trying primary calendar");
-      calendar = CalendarApp.getDefaultCalendar();
+      console.error("Error getting calendar by ID:", e);
     }
     
+    // If that fails, try getting the default calendar
     if (!calendar) {
-      console.log("Still no calendar found, trying primary calendar again");
-      calendar = CalendarApp.getDefaultCalendar();
-      
-      if (!calendar) {
-        throw new Error("Could not find any calendar to add events to");
+      try {
+        console.log("Trying to use default calendar instead");
+        calendar = CalendarApp.getDefaultCalendar();
+        if (calendar) {
+          console.log("Using default calendar:", calendar.getName());
+        } else {
+          console.log("Default calendar not found");
+        }
+      } catch (e) {
+        console.error("Error getting default calendar:", e);
       }
+    }
+    
+    // If both attempts fail, try a different approach
+    if (!calendar) {
+      try {
+        console.log("Trying to use the primary calendar");
+        calendar = CalendarApp.getOwnedCalendarById('primary');
+        if (calendar) {
+          console.log("Using primary calendar");
+        } else {
+          console.log("Primary calendar not found");
+        }
+      } catch (e) {
+        console.error("Error getting primary calendar:", e);
+      }
+    }
+    
+    // Last resort - try to get any calendar
+    if (!calendar) {
+      try {
+        console.log("Last resort: trying to get all calendars and use the first one");
+        const allCalendars = CalendarApp.getAllOwnedCalendars();
+        if (allCalendars && allCalendars.length > 0) {
+          calendar = allCalendars[0];
+          console.log("Using first available calendar:", calendar.getName());
+        } else {
+          console.log("No calendars found at all");
+        }
+      } catch (e) {
+        console.error("Error getting all calendars:", e);
+      }
+    }
+    
+    // If we still have no calendar, we can't proceed
+    if (!calendar) {
+      throw new Error("Could not find any calendar to add events to");
     }
     
     // Parse date and time
@@ -172,30 +221,53 @@ function addToCalendar(booking) {
     // End time (2 hours after start)
     const endTime = new Date(eventDate.getTime() + (2 * 60 * 60 * 1000));
     
-    // Create event 
-    const event = calendar.createEvent(
-      `${booking.service} for ${booking.name}`,
-      eventDate,
-      endTime,
-      {
-        description: `
+    // Create event description
+    const description = `
 Phone: ${booking.phone}
 Email: ${booking.email || 'Not provided'}
 Service: ${booking.service}
 Details: ${booking.details || 'No details provided'}
-      `,
-        location: booking.address,
-        sendInvites: false
+    `;
+    
+    console.log("Creating calendar event with:", {
+      title: `${booking.service} for ${booking.name}`,
+      start: eventDate.toString(),
+      end: endTime.toString(),
+      location: booking.address
+    });
+    
+    // Create event
+    let event;
+    try {
+      event = calendar.createEvent(
+        `${booking.service} for ${booking.name}`,
+        eventDate,
+        endTime,
+        {
+          description: description,
+          location: booking.address,
+          sendInvites: false
+        }
+      );
+      
+      console.log("Event created successfully with ID:", event.getId());
+      
+      // Add reminders
+      try {
+        event.addEmailReminder(24 * 60);
+        event.addPopupReminder(60);
+        console.log("Event reminders added");
+      } catch (e) {
+        console.error("Error adding reminders:", e);
       }
-    );
-    
-    // Add reminders (1 day and 1 hour before)
-    event.addEmailReminder(24 * 60);
-    event.addPopupReminder(60);
-    
-    return event.getId();
+      
+      return event.getId();
+    } catch (e) {
+      console.error("Error creating event:", e);
+      throw e;
+    }
   } catch (error) {
-    console.error("Error in addToCalendar:", error);
+    console.error("Fatal error in addToCalendar:", error);
     throw error;
   }
 }
@@ -205,31 +277,57 @@ Details: ${booking.details || 'No details provided'}
  */
 function addToSheet(booking) {
   try {
-    const spreadsheet = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
-    console.log("Opened spreadsheet with ID:", CONFIG.SPREADSHEET_ID);
+    console.log("Starting spreadsheet integration...");
+    console.log("Opening spreadsheet with ID:", CONFIG.SPREADSHEET_ID);
+    
+    let spreadsheet;
+    try {
+      spreadsheet = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+      console.log("Spreadsheet opened successfully:", spreadsheet.getName());
+    } catch (e) {
+      console.error("Error opening spreadsheet:", e);
+      throw new Error("Could not open spreadsheet: " + e.message);
+    }
     
     // Get the sheet, create it if it doesn't exist
-    let sheet = spreadsheet.getSheetByName(CONFIG.SHEET_NAME);
-    if (!sheet) {
-      console.log("Creating new sheet:", CONFIG.SHEET_NAME);
-      sheet = spreadsheet.insertSheet(CONFIG.SHEET_NAME);
-      // Add header row
-      sheet.appendRow([
-        'Name', 
-        'Phone', 
-        'Email', 
-        'Service', 
-        'Date', 
-        'Time', 
-        'Address', 
-        'Details', 
-        'Timestamp',
-        'Status'
-      ]);
-      
-      // Format header row
-      sheet.getRange(1, 1, 1, 10).setFontWeight('bold');
-      sheet.setFrozenRows(1);
+    let sheet;
+    try {
+      sheet = spreadsheet.getSheetByName(CONFIG.SHEET_NAME);
+      if (sheet) {
+        console.log("Found existing sheet:", CONFIG.SHEET_NAME);
+      } else {
+        console.log("Creating new sheet:", CONFIG.SHEET_NAME);
+        sheet = spreadsheet.insertSheet(CONFIG.SHEET_NAME);
+      }
+    } catch (e) {
+      console.error("Error getting/creating sheet:", e);
+      throw new Error("Could not get or create sheet: " + e.message);
+    }
+    
+    // If this is a new sheet, add the header row
+    if (sheet.getLastRow() === 0) {
+      console.log("Adding header row to new sheet");
+      try {
+        sheet.appendRow([
+          'Name', 
+          'Phone', 
+          'Email', 
+          'Service', 
+          'Date', 
+          'Time', 
+          'Address', 
+          'Details', 
+          'Timestamp',
+          'Status'
+        ]);
+        
+        // Format header row
+        sheet.getRange(1, 1, 1, 10).setFontWeight('bold');
+        sheet.setFrozenRows(1);
+        console.log("Header row added and formatted");
+      } catch (e) {
+        console.error("Error adding header row:", e);
+      }
     }
     
     // Format the date nicely for the spreadsheet
@@ -241,7 +339,7 @@ function addToSheet(booking) {
       console.error('Date formatting error:', e);
     }
     
-    // Append booking data
+    // Prepare row data
     const rowData = [
       booking.name,
       booking.phone,
@@ -256,12 +354,19 @@ function addToSheet(booking) {
     ];
     
     console.log("Appending row data:", rowData);
-    sheet.appendRow(rowData);
     
-    // Return the row index
-    return sheet.getLastRow();
+    // Append the row
+    try {
+      sheet.appendRow(rowData);
+      const lastRow = sheet.getLastRow();
+      console.log("Data appended successfully at row:", lastRow);
+      return lastRow;
+    } catch (e) {
+      console.error("Error appending row:", e);
+      throw new Error("Could not append data to sheet: " + e.message);
+    }
   } catch (error) {
-    console.error("Error in addToSheet:", error);
+    console.error("Fatal error in addToSheet:", error);
     throw error;
   }
 }
