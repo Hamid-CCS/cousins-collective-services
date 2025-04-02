@@ -106,7 +106,7 @@ document.addEventListener('DOMContentLoaded', function() {
         localStorage.setItem('ccsBookings', JSON.stringify(bookings));
         
         // Send to Google Apps Script Web App - replace with your actual Apps Script URL
-        const response = await fetch('https://script.google.com/macros/s/YOUR_APPS_SCRIPT_DEPLOYMENT_ID/exec', {
+        const response = await fetch('https://script.google.com/macros/s/AKfycbx0-pw9AkdQRVWuNQDg1h0U6Z-7miD9iyN2Iag39Oc9xbGG2EGbMTF7ZLHw8Sg0GPIQ/exec', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
