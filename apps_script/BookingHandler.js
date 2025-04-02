@@ -74,38 +74,46 @@ function logError(message, data) { log('ERROR', message, data); }
  * Main entry point - handles all HTTP requests to this web app
  */
 function doPost(e) {
-  logInfo('==== START doPost ====', { contentLength: e && e.postData ? e.postData.length : 'no data' });
-  logInfo('Request headers:', e.headers);
-  
-  // Add CORS headers for all responses
-  const headers = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type'
-  };
+  logInfo('==== START doPost ====', e ? { contentLength: e.postData ? e.postData.length : 'no data' } : 'no event');
+  logInfo('Request details:', e);
   
   try {
-    // Parse the incoming JSON data
+    // Parse the incoming data
     let bookingData;
     try {
-      logInfo('Parsing request body', e.postData.contents);
-      bookingData = JSON.parse(e.postData.contents);
+      // Handle both form data and direct JSON
+      if (e.parameter && e.parameter.data) {
+        // Form data approach
+        logInfo('Received form data parameter:', e.parameter.data);
+        bookingData = JSON.parse(e.parameter.data);
+      } else if (e.postData && e.postData.contents) {
+        // Direct JSON approach
+        logInfo('Received postData contents:', e.postData.contents);
+        bookingData = JSON.parse(e.postData.contents);
+      } else {
+        // Try parameters as a last resort
+        logInfo('Trying to parse from parameters:', e.parameters);
+        const allParams = e.parameters;
+        if (allParams && allParams.data && allParams.data.length > 0) {
+          bookingData = JSON.parse(allParams.data[0]);
+        } else {
+          throw new Error("No valid data found in the request");
+        }
+      }
       logInfo('Parsed booking data:', bookingData);
     } catch (error) {
-      logError('JSON parsing error:', { error: error.toString(), contents: e.postData.contents });
-      return createResponse({ 
-        success: false, 
-        message: 'Invalid JSON data: ' + error.toString() 
-      }, headers);
+      logError('Data parsing error:', { error: error.toString(), event: JSON.stringify(e) });
+      return HtmlService.createHtmlOutput(
+        "Error: Invalid data format. Please check the console logs."
+      );
     }
     
     // Validate the booking data
     if (!validateBooking(bookingData)) {
       logError('Missing required booking data', bookingData);
-      return createResponse({ 
-        success: false, 
-        message: 'Missing required booking information' 
-      }, headers);
+      return HtmlService.createHtmlOutput(
+        "Error: Missing required booking information. Check the logs for details."
+      );
     }
     
     // Results object to track what succeeded
@@ -113,8 +121,7 @@ function doPost(e) {
       sheetSuccess: false,
       calendarSuccess: false,
       sheetError: null,
-      calendarError: null,
-      logs: []
+      calendarError: null
     };
     
     // First try to add to spreadsheet
@@ -141,46 +148,26 @@ function doPost(e) {
       logError('Failed to add to calendar:', calendarError);
     }
     
-    // Include logs in the response
-    results.logs = logs;
-    
-    // Return results
+    // Return a success page for form submissions
     logInfo('==== END doPost ====', { success: results.sheetSuccess || results.calendarSuccess });
-    return createResponse({
-      success: results.sheetSuccess || results.calendarSuccess,
-      message: 'Booking processing complete',
-      details: results
-    }, headers);
+    
+    if (results.sheetSuccess || results.calendarSuccess) {
+      return HtmlService.createHtmlOutput(
+        "<h1>Booking Received</h1><p>Your booking has been successfully processed.</p><p>You can close this window now.</p>"
+      );
+    } else {
+      return HtmlService.createHtmlOutput(
+        "<h1>Booking Error</h1><p>There was an issue processing your booking.</p><p>Please contact us directly.</p>"
+      );
+    }
     
   } catch (error) {
     // Log the error and return an error response
     logError('Global error in doPost:', error);
-    return createResponse({ 
-      success: false, 
-      message: 'Global error: ' + error.toString(),
-      logs: logs
-    }, headers);
+    return HtmlService.createHtmlOutput(
+      "<h1>System Error</h1><p>There was a system error processing your booking.</p><p>Please try again later or contact us directly.</p>"
+    );
   }
-}
-
-/**
- * Create a properly formatted response with headers
- */
-function createResponse(data, headers) {
-  const output = ContentService.createTextOutput(JSON.stringify(data));
-  output.setMimeType(ContentService.MimeType.JSON);
-  return output;
-}
-
-/**
- * Handle OPTIONS requests for CORS preflight
- */
-function doOptions(e) {
-  logInfo('Handling OPTIONS request', e.headers);
-  
-  const output = ContentService.createTextOutput('');
-  output.setMimeType(ContentService.MimeType.TEXT);
-  return output;
 }
 
 /**

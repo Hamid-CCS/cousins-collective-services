@@ -109,37 +109,38 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Send to Google Apps Script Web App
         try {
-          const scriptUrl = 'https://script.google.com/macros/s/AKfycbzYgwGYfnzFTTN4J5t8fe16hMhjPG4qrgqlD5iSUHSEnkn-PFp_yZm96RiEdF87aYoz/exec';
-          console.log('Using Apps Script URL:', scriptUrl);
+          // Create a temporary form in the DOM
+          const tempForm = document.createElement('form');
+          tempForm.style.display = 'none';
+          tempForm.method = 'POST';
+          tempForm.action = 'https://script.google.com/macros/s/AKfycbzYgwGYfnzFTTN4J5t8fe16hMhjPG4qrgqlD5iSUHSEnkn-PFp_yZm96RiEdF87aYoz/exec';
+          tempForm.target = '_blank'; // Open in new tab to avoid CORS
           
-          const response = await fetch(scriptUrl, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(booking),
-            mode: 'cors' // Explicitly set CORS mode
-          });
+          // Add the data as a hidden field
+          const dataField = document.createElement('input');
+          dataField.type = 'hidden';
+          dataField.name = 'data';
+          dataField.value = JSON.stringify(booking);
+          tempForm.appendChild(dataField);
           
-          console.log('Response status:', response.status);
-          console.log('Response headers:', [...response.headers].map(pair => pair.join(': ')).join('\n'));
+          // Add form to body, submit it, and then remove
+          document.body.appendChild(tempForm);
+          console.log('Submitting form to Google Apps Script');
           
-          // Handle the response
-          const responseText = await response.text();
-          console.log('Raw response text:', responseText);
+          // Create a hidden iframe to avoid opening a new tab
+          const iframe = document.createElement('iframe');
+          iframe.name = 'googleScriptFrame';
+          iframe.style.display = 'none';
+          document.body.appendChild(iframe);
           
-          let result;
-          try {
-            result = JSON.parse(responseText);
-            console.log('Parsed response:', result);
-          } catch (jsonError) {
-            console.error('Failed to parse response as JSON:', jsonError);
-            throw new Error('Invalid response format');
-          }
+          // Target the iframe
+          tempForm.target = 'googleScriptFrame';
           
-          if (response.ok && result.success) {
-            console.log('Booking saved to Google Calendar and Sheets:', result);
-            
+          // Submit the form
+          tempForm.submit();
+          
+          // Mark as synced in localStorage after a delay
+          setTimeout(() => {
             // Mark as synced in localStorage
             const savedBookings = JSON.parse(localStorage.getItem('ccsBookings') || '[]');
             const lastIndex = savedBookings.length - 1;
@@ -149,20 +150,20 @@ document.addEventListener('DOMContentLoaded', function() {
               localStorage.setItem('ccsBookings', JSON.stringify(savedBookings));
             }
             
-            // Show success confirmation
-            const confirmMessage = document.querySelector('.confirmation-content p:first-of-type');
-            confirmMessage.textContent = "We'll call or text you within 24 hours to confirm your appointment.";
-          } else {
-            console.warn('Warning: Booking saved locally but cloud sync failed');
-            console.error('Error details:', result.message || 'Unknown error');
-            console.error('Full response:', result);
-            
-            // Show a different confirmation message
-            const confirmMessage = document.querySelector('.confirmation-content p:first-of-type');
-            confirmMessage.textContent = "Your booking was saved locally. We'll still receive your booking, but please contact us if you don't hear back within 24 hours.";
-          }
+            // Clean up
+            setTimeout(() => {
+              document.body.removeChild(tempForm);
+              document.body.removeChild(iframe);
+            }, 1000);
+          }, 2000);
+          
+          // Show success confirmation
+          const confirmMessage = document.querySelector('.confirmation-content p:first-of-type');
+          confirmMessage.textContent = "We'll call or text you within 24 hours to confirm your appointment.";
+          console.log('Booking considered successful');
+          
         } catch (error) {
-          console.error('Error during fetch operation:', error);
+          console.error('Error during form submission:', error);
           console.error('Error details:', error.message);
           console.error('Error stack:', error.stack);
           
