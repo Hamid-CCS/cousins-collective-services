@@ -109,7 +109,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Send to Google Apps Script Web App
         try {
-          const scriptUrl = 'https://script.google.com/macros/s/AKfycbx20HiX7gqCZI9_4d4k_TTXsTpCUxzZGAMa7HY0R1IvAphCWh00g_tYyn12QxJIvlww/exec';
+          const scriptUrl = 'https://script.google.com/macros/s/AKfycbzYgwGYfnzFTTN4J5t8fe16hMhjPG4qrgqlD5iSUHSEnkn-PFp_yZm96RiEdF87aYoz/exec';
           console.log('Using Apps Script URL:', scriptUrl);
           
           const response = await fetch(scriptUrl, {
