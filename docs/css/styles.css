@@ -765,4 +765,142 @@ ul {
   .contact-info {
     grid-template-columns: 1fr;
   }
-} 
+}
+
+/* Form validation styles */
+.booking-form input.invalid,
+.booking-form select.invalid,
+.booking-form textarea.invalid {
+  border-color: #f44336;
+  background-color: rgba(244, 67, 54, 0.05);
+}
+
+.booking-form input:focus,
+.booking-form select:focus,
+.booking-form textarea:focus {
+  border-color: #4CAF50;
+  box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+  outline: none;
+}
+
+.form-note {
+  font-size: 0.9em;
+  margin-bottom: 20px;
+}
+
+.form-note p {
+  margin: 5px 0;
+}
+
+/* Loading state for buttons */
+.btn-primary:disabled,
+.btn-secondary:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* Improved booking confirmation */
+.booking-confirmation {
+  display: none;
+  padding: 40px 20px;
+  text-align: center;
+}
+
+.booking-confirmation.active {
+  display: block;
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+.confirmation-content {
+  background-color: #f9f9f9;
+  border-radius: 10px;
+  padding: 30px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.confirmation-content i {
+  font-size: 60px;
+  color: #4CAF50;
+  margin-bottom: 20px;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Responsive improvements */
+@media (max-width: 768px) {
+  .booking-form {
+    grid-template-columns: 1fr;
+  }
+  
+  .booking-form .form-group {
+    grid-column: 1;
+  }
+}
+
+/* Admin panel enhancements */
+.booking-card {
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.booking-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+}
+
+.controls button {
+  transition: background-color 0.2s;
+}
+
+.controls button:hover {
+  filter: brightness(1.1);
+}
+
+/* Enhanced service cards */
+.service-card {
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.service-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+.service-icon {
+  transition: transform 0.3s;
+}
+
+.service-card:hover .service-icon {
+  transform: scale(1.1);
+}
+
+/* Testimonials animation */
+.testimonial-card {
+  transition: transform 0.3s;
+}
+
+.testimonial-card:hover {
+  transform: translateY(-5px);
+}
+
+/* Date and time picker enhancement */
+input[type="date"],
+input[type="time"] {
+  cursor: pointer;
+}
+
+/* Bundle cards enhancement */
+.bundle-card {
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.bundle-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* End of additions */ 

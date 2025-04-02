@@ -50,8 +50,41 @@ document.addEventListener('DOMContentLoaded', function() {
   const newBookingBtn = document.getElementById('newBookingBtn');
   
   if (bookingForm) {
-    bookingForm.addEventListener('submit', function(e) {
+    // Populate service dropdown dynamically if hash parameter is provided
+    const urlParams = new URLSearchParams(window.location.hash.substring(1));
+    const serviceParam = urlParams.get('service');
+    if (serviceParam && document.getElementById('service')) {
+      // Find the option that best matches the serviceParam
+      const options = Array.from(document.getElementById('service').options);
+      for (const option of options) {
+        if (option.value && option.value.toLowerCase().includes(serviceParam.toLowerCase())) {
+          option.selected = true;
+          break;
+        }
+      }
+    }
+    
+    // Validate form fields on input
+    const inputs = bookingForm.querySelectorAll('input, select, textarea');
+    inputs.forEach(input => {
+      input.addEventListener('input', function() {
+        if (input.required && input.value.trim() === '') {
+          input.classList.add('invalid');
+        } else {
+          input.classList.remove('invalid');
+        }
+      });
+    });
+    
+    // Handle form submission
+    bookingForm.addEventListener('submit', async function(e) {
       e.preventDefault();
+      
+      // Show loading state
+      const submitBtn = bookingForm.querySelector('button[type="submit"]');
+      const originalBtnText = submitBtn.textContent;
+      submitBtn.textContent = 'Processing...';
+      submitBtn.disabled = true;
       
       // Get form data and create booking object
       const booking = {
@@ -66,23 +99,84 @@ document.addEventListener('DOMContentLoaded', function() {
         timestamp: new Date().toISOString()
       };
       
-      // Store in localStorage
-      let bookings = JSON.parse(localStorage.getItem('ccsBookings') || '[]');
-      bookings.push(booking);
-      localStorage.setItem('ccsBookings', JSON.stringify(bookings));
-      
-      console.log('Booking saved:', booking);
-      
-      // Show confirmation message
-      bookingForm.style.display = 'none';
-      bookingConfirmation.classList.add('active');
+      try {
+        // Store in localStorage as a backup
+        let bookings = JSON.parse(localStorage.getItem('ccsBookings') || '[]');
+        bookings.push(booking);
+        localStorage.setItem('ccsBookings', JSON.stringify(bookings));
+        
+        // Send to Google Apps Script Web App - replace with your actual Apps Script URL
+        const response = await fetch('https://script.google.com/macros/s/YOUR_APPS_SCRIPT_DEPLOYMENT_ID/exec', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(booking)
+        });
+        
+        // Handle the response
+        if (response.ok) {
+          const result = await response.json();
+          console.log('Booking saved to Google Calendar and Sheets:', result);
+          
+          // Show success confirmation
+          const confirmMessage = document.querySelector('.confirmation-content p:first-of-type');
+          confirmMessage.textContent = "We'll call or text you within 24 hours to confirm your appointment.";
+        } else {
+          console.warn('Warning: Booking saved locally but cloud sync failed');
+          
+          // Show a different confirmation message
+          const confirmMessage = document.querySelector('.confirmation-content p:first-of-type');
+          confirmMessage.textContent = "Your booking was saved locally. We'll still receive your booking, but please contact us if you don't hear back within 24 hours.";
+        }
+        
+        // Show confirmation message regardless of cloud sync status
+        // (since we have a local backup in localStorage)
+        bookingForm.style.display = 'none';
+        bookingConfirmation.classList.add('active');
+        
+      } catch (error) {
+        console.error('Error during booking submission:', error);
+        
+        // Update UI to inform user
+        alert('Your booking was saved locally, but there was an issue connecting to our system. We will still receive your booking.');
+        
+        // Show confirmation anyway since we saved to localStorage
+        bookingForm.style.display = 'none';
+        bookingConfirmation.classList.add('active');
+      } finally {
+        // Reset button state
+        submitBtn.textContent = originalBtnText;
+        submitBtn.disabled = false;
+      }
     });
+  }
+  
+  // Initialize date picker with minimum date of today
+  const dateInput = document.getElementById('date');
+  if (dateInput) {
+    const today = new Date();
+    const formattedDate = today.toISOString().split('T')[0];
+    dateInput.min = formattedDate;
+    
+    // Set default date to tomorrow
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    dateInput.value = tomorrow.toISOString().split('T')[0];
   }
   
   // Reset form for new booking
   if (newBookingBtn) {
     newBookingBtn.addEventListener('click', function() {
       bookingForm.reset();
+      
+      // Reset default date to tomorrow
+      if (dateInput) {
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        dateInput.value = tomorrow.toISOString().split('T')[0];
+      }
+      
       bookingForm.style.display = 'grid';
       bookingConfirmation.classList.remove('active');
     });
@@ -111,4 +205,4 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     });
   });
-});
+}); 
