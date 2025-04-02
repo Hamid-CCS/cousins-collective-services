@@ -428,7 +428,66 @@
           
           if (unsynced.length === 0) {
             syncMessage.className = 'sync-message success';
-            syncMessage.textContent = 'All bookings are already synced!';
+            syncMessage.textContent = 'All bookings are already synced! Click "Force Resync All" to sync again.';
+            
+            // Add Force Resync button
+            const forceResyncBtn = document.createElement('button');
+            forceResyncBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Force Resync All';
+            forceResyncBtn.style.marginTop = '10px';
+            forceResyncBtn.style.backgroundColor = '#FF9800';
+            
+            forceResyncBtn.addEventListener('click', async function() {
+              this.disabled = true;
+              this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Resyncing...';
+              
+              // Reset synced status for all bookings
+              bookings.forEach(b => b.syncedWithGoogle = false);
+              localStorage.setItem('ccsBookings', JSON.stringify(bookings));
+              
+              // Restart sync process
+              let syncCount = 0;
+              for (const booking of bookings) {
+                try {
+                  console.log('Force resyncing booking:', booking);
+                  const response = await fetch(cleanUrl, {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(booking)
+                  });
+                  
+                  console.log('Resync response status:', response.status);
+                  
+                  if (response.ok) {
+                    booking.syncedWithGoogle = true;
+                    booking.status = booking.status || 'new';
+                    syncCount++;
+                    console.log('Booking resynced successfully');
+                  } else {
+                    console.error('Resync response not OK:', await response.text());
+                  }
+                } catch (error) {
+                  console.error('Error resyncing booking:', error);
+                }
+              }
+              
+              // Save updated bookings
+              localStorage.setItem('ccsBookings', JSON.stringify(bookings));
+              
+              // Update message
+              syncMessage.textContent = `Successfully resynced ${syncCount} bookings with Google!`;
+              
+              // Remove the button
+              this.remove();
+              
+              // Refresh display
+              displayBookings();
+            });
+            
+            syncMessage.appendChild(document.createElement('br'));
+            syncMessage.appendChild(forceResyncBtn);
+            
             performSyncBtn.disabled = false;
             performSyncBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Sync Bookings';
             return;
