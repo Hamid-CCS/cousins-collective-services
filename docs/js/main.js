@@ -108,7 +108,7 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('Sending booking to Google Apps Script:', booking);
         
         // Send to Google Apps Script Web App - replace with your actual Apps Script URL
-        const response = await fetch('https://script.google.com/macros/s/AKfycbze_2T75V0ICPatHPm2semulPt8fTO3iDKwZRIL2WVMOG3/exec', {
+        const response = await fetch('https://script.google.com/macros/s/AKfycbx20HiX7gqCZI9_4d4k_TTXsTpCUxzZGAMa7HY0R1IvAphCWh00g_tYyn12QxJIvlww/exec', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
