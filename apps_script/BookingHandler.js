@@ -10,23 +10,23 @@
  * 1. Create a new Google Apps Script project at https://script.google.com/
  * 2. Copy this code into the project
  * 3. Deploy as a web app (Publish > Deploy as web app)
- *    - Set "Who has access" to "Anyone, even anonymous"
+ *    - Set "Who has access" to "Anyone"
  *    - Copy the web app URL for use in your website
  */
 
 // Configuration - Update these values
 const CONFIG = {
   // The ID of your Google Calendar (found in calendar settings)
-  CALENDAR_ID: 'hamid@cousinscollectiveservices.com', // e.g. 'primary' or specific calendar ID
+  CALENDAR_ID: 'primary', // Using primary calendar for simplest setup
   
   // The ID of your Google Sheet (from the URL)
   SPREADSHEET_ID: '1OW55nUXA8PwC57mpkkmdQ5wfs6TmyFgEiRYJ1UL9W28',
   
   // The name of the sheet to store bookings (default is 'Sheet1')
-  SHEET_NAME: 'Bookings',
+  SHEET_NAME: 'Sheet1',
   
   // Email settings
-  SEND_EMAILS: true,
+  SEND_EMAILS: false, // Disable emails for now to focus on other functionality
   FROM_NAME: 'Cousins Collective Services',
   ADMIN_EMAIL: 'hamid@cousinscollectiveservices.com',
   
@@ -46,7 +46,7 @@ function doPost(e) {
       console.log("Received booking data:", JSON.stringify(bookingData));
     } catch (error) {
       console.error("JSON parsing error:", error);
-      return outputError('Invalid JSON data');
+      return outputError('Invalid JSON data: ' + error);
     }
     
     // Validate the booking data
@@ -55,25 +55,49 @@ function doPost(e) {
       return outputError('Missing required booking information');
     }
     
-    // Process the booking
-    console.log("Processing booking...");
-    const result = processBooking(bookingData);
-    console.log("Booking processed with result:", JSON.stringify(result));
+    // Results object to track what succeeded
+    const results = {
+      sheetSuccess: false,
+      calendarSuccess: false,
+      sheetError: null,
+      calendarError: null
+    };
     
-    // Return success response with CORS headers
+    // First try to add to spreadsheet
+    try {
+      const rowIndex = addToSheet(bookingData);
+      results.sheetSuccess = true;
+      results.rowIndex = rowIndex;
+      console.log("Successfully added to sheet at row:", rowIndex);
+    } catch (sheetError) {
+      results.sheetError = sheetError.toString();
+      console.error("Failed to add to sheet:", sheetError);
+    }
+    
+    // Then try to add to calendar
+    try {
+      const eventId = addToCalendar(bookingData);
+      results.calendarSuccess = true;
+      results.eventId = eventId;
+      console.log("Successfully added to calendar with ID:", eventId);
+    } catch (calendarError) {
+      results.calendarError = calendarError.toString();
+      console.error("Failed to add to calendar:", calendarError);
+    }
+    
+    // Return results with detailed status
     return ContentService
       .createTextOutput(JSON.stringify({
-        success: true,
-        message: 'Booking processed successfully',
-        calendarEventId: result.eventId,
-        sheetRow: result.rowIndex
+        success: results.sheetSuccess || results.calendarSuccess,
+        message: 'Booking processing complete',
+        details: results
       }))
       .setMimeType(ContentService.MimeType.JSON);
     
   } catch (error) {
     // Log the error and return an error response
     console.error('Error processing booking:', error);
-    return outputError(error.toString());
+    return outputError('Global error: ' + error.toString());
   }
 }
 
@@ -94,45 +118,62 @@ function doGet() {
     .createTextOutput(JSON.stringify({
       status: 'online',
       message: 'CCS Booking Handler is running',
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      calendarAccess: testCalendarAccess(),
+      sheetAccess: testSheetAccess()
     }))
     .setMimeType(ContentService.MimeType.JSON);
 }
 
 /**
- * Process a booking by adding it to Calendar and Sheets
+ * Test if we can access the calendar
  */
-function processBooking(booking) {
+function testCalendarAccess() {
   try {
-    // Add to calendar
-    console.log("Adding to calendar...");
-    const eventId = addToCalendar(booking);
-    console.log("Event created with ID:", eventId);
-    
-    // Add to spreadsheet
-    console.log("Adding to spreadsheet...");
-    const rowIndex = addToSheet(booking);
-    console.log("Added to row:", rowIndex);
-    
-    // Send confirmation emails
-    if (CONFIG.SEND_EMAILS) {
-      try {
-        console.log("Sending emails...");
-        sendConfirmationEmails(booking);
-        console.log("Emails sent successfully");
-      } catch (error) {
-        console.error('Error sending emails:', error);
-        // Continue processing even if emails fail
-      }
+    // Try to get the calendar
+    let calendar;
+    try {
+      calendar = CalendarApp.getDefaultCalendar();
+      return {
+        success: true,
+        name: calendar.getName(),
+        message: "Successfully accessed default calendar"
+      };
+    } catch (e) {
+      return {
+        success: false,
+        error: e.toString(),
+        message: "Could not access default calendar"
+      };
     }
-    
+  } catch (error) {
     return {
-      eventId: eventId,
-      rowIndex: rowIndex
+      success: false,
+      error: error.toString(),
+      message: "Error testing calendar access"
+    };
+  }
+}
+
+/**
+ * Test if we can access the spreadsheet
+ */
+function testSheetAccess() {
+  try {
+    // Try to open the spreadsheet
+    const spreadsheet = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+    return {
+      success: true,
+      name: spreadsheet.getName(),
+      message: "Successfully accessed spreadsheet",
+      sheets: spreadsheet.getSheets().map(s => s.getName())
     };
   } catch (error) {
-    console.error("Error in processBooking:", error);
-    throw error;
+    return {
+      success: false,
+      error: error.toString(),
+      message: "Could not access spreadsheet"
+    };
   }
 }
 
@@ -140,311 +181,122 @@ function processBooking(booking) {
  * Add a booking to Google Calendar
  */
 function addToCalendar(booking) {
-  try {
-    console.log("Starting calendar integration...");
-    
-    // First try to get the specified calendar
-    let calendar;
-    try {
-      console.log("Looking for calendar with ID:", CONFIG.CALENDAR_ID);
-      calendar = CalendarApp.getCalendarById(CONFIG.CALENDAR_ID);
-      if (calendar) {
-        console.log("Found calendar:", calendar.getName());
-      } else {
-        console.log("Calendar not found with ID:", CONFIG.CALENDAR_ID);
-      }
-    } catch (e) {
-      console.error("Error getting calendar by ID:", e);
-    }
-    
-    // If that fails, try getting the default calendar
-    if (!calendar) {
-      try {
-        console.log("Trying to use default calendar instead");
-        calendar = CalendarApp.getDefaultCalendar();
-        if (calendar) {
-          console.log("Using default calendar:", calendar.getName());
-        } else {
-          console.log("Default calendar not found");
-        }
-      } catch (e) {
-        console.error("Error getting default calendar:", e);
-      }
-    }
-    
-    // If both attempts fail, try a different approach
-    if (!calendar) {
-      try {
-        console.log("Trying to use the primary calendar");
-        calendar = CalendarApp.getOwnedCalendarById('primary');
-        if (calendar) {
-          console.log("Using primary calendar");
-        } else {
-          console.log("Primary calendar not found");
-        }
-      } catch (e) {
-        console.error("Error getting primary calendar:", e);
-      }
-    }
-    
-    // Last resort - try to get any calendar
-    if (!calendar) {
-      try {
-        console.log("Last resort: trying to get all calendars and use the first one");
-        const allCalendars = CalendarApp.getAllOwnedCalendars();
-        if (allCalendars && allCalendars.length > 0) {
-          calendar = allCalendars[0];
-          console.log("Using first available calendar:", calendar.getName());
-        } else {
-          console.log("No calendars found at all");
-        }
-      } catch (e) {
-        console.error("Error getting all calendars:", e);
-      }
-    }
-    
-    // If we still have no calendar, we can't proceed
-    if (!calendar) {
-      throw new Error("Could not find any calendar to add events to");
-    }
-    
-    // Parse date and time
-    const dateString = booking.date;
-    const timeString = booking.time || '10:00 AM';
-    
-    console.log("Creating event for date:", dateString, "time:", timeString);
-    
-    // Create JavaScript Date object
-    const eventDate = parseDateTime(dateString, timeString);
-    console.log("Parsed date object:", eventDate);
-    
-    // End time (2 hours after start)
-    const endTime = new Date(eventDate.getTime() + (2 * 60 * 60 * 1000));
-    
-    // Create event description
-    const description = `
+  console.log("Starting calendar integration...");
+  
+  // Get the default calendar (primary)
+  const calendar = CalendarApp.getDefaultCalendar();
+  console.log("Using default calendar:", calendar.getName());
+  
+  // Parse date and time
+  const dateString = booking.date;
+  const timeString = booking.time || '10:00 AM';
+  
+  console.log("Creating event for date:", dateString, "time:", timeString);
+  
+  // Create JavaScript Date object
+  const eventDate = parseDateTime(dateString, timeString);
+  console.log("Parsed date object:", eventDate);
+  
+  // End time (2 hours after start)
+  const endTime = new Date(eventDate.getTime() + (2 * 60 * 60 * 1000));
+  
+  // Create event description
+  const description = `
 Phone: ${booking.phone}
 Email: ${booking.email || 'Not provided'}
 Service: ${booking.service}
 Details: ${booking.details || 'No details provided'}
-    `;
-    
-    console.log("Creating calendar event with:", {
-      title: `${booking.service} for ${booking.name}`,
-      start: eventDate.toString(),
-      end: endTime.toString(),
+  `;
+  
+  console.log("Creating calendar event");
+  
+  // Create event
+  const event = calendar.createEvent(
+    `${booking.service} for ${booking.name}`,
+    eventDate,
+    endTime,
+    {
+      description: description,
       location: booking.address
-    });
-    
-    // Create event
-    let event;
-    try {
-      event = calendar.createEvent(
-        `${booking.service} for ${booking.name}`,
-        eventDate,
-        endTime,
-        {
-          description: description,
-          location: booking.address,
-          sendInvites: false
-        }
-      );
-      
-      console.log("Event created successfully with ID:", event.getId());
-      
-      // Add reminders
-      try {
-        event.addEmailReminder(24 * 60);
-        event.addPopupReminder(60);
-        console.log("Event reminders added");
-      } catch (e) {
-        console.error("Error adding reminders:", e);
-      }
-      
-      return event.getId();
-    } catch (e) {
-      console.error("Error creating event:", e);
-      throw e;
     }
-  } catch (error) {
-    console.error("Fatal error in addToCalendar:", error);
-    throw error;
-  }
+  );
+  
+  console.log("Event created successfully with ID:", event.getId());
+  
+  return event.getId();
 }
 
 /**
  * Add a booking to Google Sheets
  */
 function addToSheet(booking) {
-  try {
-    console.log("Starting spreadsheet integration...");
-    console.log("Opening spreadsheet with ID:", CONFIG.SPREADSHEET_ID);
-    
-    let spreadsheet;
-    try {
-      spreadsheet = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
-      console.log("Spreadsheet opened successfully:", spreadsheet.getName());
-    } catch (e) {
-      console.error("Error opening spreadsheet:", e);
-      throw new Error("Could not open spreadsheet: " + e.message);
-    }
-    
-    // Get the sheet, create it if it doesn't exist
-    let sheet;
-    try {
-      sheet = spreadsheet.getSheetByName(CONFIG.SHEET_NAME);
-      if (sheet) {
-        console.log("Found existing sheet:", CONFIG.SHEET_NAME);
-      } else {
-        console.log("Creating new sheet:", CONFIG.SHEET_NAME);
-        sheet = spreadsheet.insertSheet(CONFIG.SHEET_NAME);
-      }
-    } catch (e) {
-      console.error("Error getting/creating sheet:", e);
-      throw new Error("Could not get or create sheet: " + e.message);
-    }
-    
-    // If this is a new sheet, add the header row
-    if (sheet.getLastRow() === 0) {
-      console.log("Adding header row to new sheet");
-      try {
-        sheet.appendRow([
-          'Name', 
-          'Phone', 
-          'Email', 
-          'Service', 
-          'Date', 
-          'Time', 
-          'Address', 
-          'Details', 
-          'Timestamp',
-          'Status'
-        ]);
-        
-        // Format header row
-        sheet.getRange(1, 1, 1, 10).setFontWeight('bold');
-        sheet.setFrozenRows(1);
-        console.log("Header row added and formatted");
-      } catch (e) {
-        console.error("Error adding header row:", e);
-      }
-    }
-    
-    // Format the date nicely for the spreadsheet
-    let formattedDate = booking.date;
-    try {
-      const date = new Date(booking.date);
-      formattedDate = Utilities.formatDate(date, CONFIG.TIMEZONE, 'MM/dd/yyyy');
-    } catch (e) {
-      console.error('Date formatting error:', e);
-    }
-    
-    // Prepare row data
-    const rowData = [
-      booking.name,
-      booking.phone,
-      booking.email || 'Not provided',
-      booking.service,
-      formattedDate,
-      booking.time || '10:00 AM',
-      booking.address,
-      booking.details || 'No details provided',
-      new Date().toISOString(),
-      'New' // Status column for tracking (New, Confirmed, Completed, Cancelled)
-    ];
-    
-    console.log("Appending row data:", rowData);
-    
-    // Append the row
-    try {
-      sheet.appendRow(rowData);
-      const lastRow = sheet.getLastRow();
-      console.log("Data appended successfully at row:", lastRow);
-      return lastRow;
-    } catch (e) {
-      console.error("Error appending row:", e);
-      throw new Error("Could not append data to sheet: " + e.message);
-    }
-  } catch (error) {
-    console.error("Fatal error in addToSheet:", error);
-    throw error;
-  }
-}
-
-/**
- * Send confirmation emails for a new booking
- */
-function sendConfirmationEmails(booking) {
-  // Only send email if an email was provided
-  if (!booking.email || booking.email === 'Not provided') {
-    console.log("No email provided, skipping email notifications");
-    return;
+  console.log("Starting spreadsheet integration...");
+  console.log("Opening spreadsheet with ID:", CONFIG.SPREADSHEET_ID);
+  
+  const spreadsheet = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+  console.log("Spreadsheet opened successfully:", spreadsheet.getName());
+  
+  // Get the sheet, create it if it doesn't exist
+  let sheet = spreadsheet.getSheetByName(CONFIG.SHEET_NAME);
+  if (!sheet) {
+    console.log("Sheet not found. Creating new sheet:", CONFIG.SHEET_NAME);
+    sheet = spreadsheet.insertSheet(CONFIG.SHEET_NAME);
+  } else {
+    console.log("Found existing sheet:", CONFIG.SHEET_NAME);
   }
   
-  // Format date for email
+  // If this is a new sheet, add the header row
+  if (sheet.getLastRow() === 0) {
+    console.log("Adding header row to new sheet");
+    sheet.appendRow([
+      'Name', 
+      'Phone', 
+      'Email', 
+      'Service', 
+      'Date', 
+      'Time', 
+      'Address', 
+      'Details', 
+      'Timestamp',
+      'Status'
+    ]);
+    
+    // Format header row
+    sheet.getRange(1, 1, 1, 10).setFontWeight('bold');
+    sheet.setFrozenRows(1);
+  }
+  
+  // Format the date nicely for the spreadsheet
   let formattedDate = booking.date;
   try {
     const date = new Date(booking.date);
-    formattedDate = Utilities.formatDate(date, CONFIG.TIMEZONE, 'EEEE, MMMM d, yyyy');
+    formattedDate = Utilities.formatDate(date, CONFIG.TIMEZONE, 'MM/dd/yyyy');
   } catch (e) {
     console.error('Date formatting error:', e);
   }
   
-  // Send confirmation to customer
-  const customerSubject = `Booking Confirmation - ${booking.service} - Cousins Collective Services`;
-  const customerBody = `
-Dear ${booking.name},
-
-Thank you for booking with Cousins Collective Services! 
-
-We have received your booking for the following service:
-
-Service: ${booking.service}
-Date: ${formattedDate}
-Time: ${booking.time || '10:00 AM'}
-Location: ${booking.address}
-
-We will contact you shortly to confirm your appointment. If you need to make any changes, please call or text us.
-
-Thank you for choosing Cousins Collective Services!
-
-Best regards,
-The CCS Team
-  `;
+  // Prepare row data
+  const rowData = [
+    booking.name,
+    booking.phone,
+    booking.email || 'Not provided',
+    booking.service,
+    formattedDate,
+    booking.time || '10:00 AM',
+    booking.address,
+    booking.details || 'No details provided',
+    new Date().toISOString(),
+    'New' // Status column for tracking (New, Confirmed, Completed, Cancelled)
+  ];
   
-  // Send confirmation to admin
-  const adminSubject = `New Booking: ${booking.service} for ${booking.name}`;
-  const adminBody = `
-A new booking has been received:
-
-Name: ${booking.name}
-Phone: ${booking.phone}
-Email: ${booking.email || 'Not provided'}
-Service: ${booking.service}
-Date: ${formattedDate}
-Time: ${booking.time || '10:00 AM'}
-Address: ${booking.address}
-Details: ${booking.details || 'No details provided'}
-Timestamp: ${new Date().toLocaleString()}
-
-This booking has been added to your calendar and the booking spreadsheet.
-  `;
+  console.log("Appending row data");
   
-  try {
-    // Send emails
-    console.log("Sending email to customer:", booking.email);
-    GmailApp.sendEmail(booking.email, customerSubject, customerBody, {
-      name: CONFIG.FROM_NAME
-    });
-    
-    console.log("Sending email to admin:", CONFIG.ADMIN_EMAIL);
-    GmailApp.sendEmail(CONFIG.ADMIN_EMAIL, adminSubject, adminBody, {
-      name: 'CCS Booking System'
-    });
-  } catch (error) {
-    console.error("Error sending emails:", error);
-    throw error;
-  }
+  // Append the row
+  sheet.appendRow(rowData);
+  const lastRow = sheet.getLastRow();
+  console.log("Data appended successfully at row:", lastRow);
+  
+  return lastRow;
 }
 
 /**
@@ -470,59 +322,51 @@ function validateBooking(booking) {
  * Helper function to parse date and time strings
  */
 function parseDateTime(dateString, timeString) {
-  try {
-    console.log("Parsing date:", dateString, "and time:", timeString);
-    
-    // Make sure we have a valid date string
-    if (!dateString || dateString.trim() === '') {
-      throw new Error("Empty date string");
-    }
-    
-    const date = new Date(dateString);
-    
-    // Check if date is valid
-    if (isNaN(date.getTime())) {
-      throw new Error("Invalid date: " + dateString);
-    }
-    
-    // Default time if no time string is provided
-    if (!timeString || timeString.trim() === '') {
-      timeString = '10:00 AM';
-    }
-    
-    // Parse the time
-    let hours = 10;
-    let minutes = 0;
-    
-    // Try to parse the time string (handles both '10:00 AM' and '10:00')
-    const timeMatch = timeString.match(/(\d+):(\d+)(?:\s*(AM|PM))?/i);
-    if (timeMatch) {
-      hours = parseInt(timeMatch[1], 10);
-      minutes = parseInt(timeMatch[2], 10);
-      
-      // Handle PM
-      if (timeMatch[3] && timeMatch[3].toUpperCase() === 'PM' && hours < 12) {
-        hours += 12;
-      }
-      
-      // Handle 12 AM
-      if (timeMatch[3] && timeMatch[3].toUpperCase() === 'AM' && hours === 12) {
-        hours = 0;
-      }
-    }
-    
-    // Set the time
-    date.setHours(hours, minutes, 0, 0);
-    
-    console.log("Parsed datetime:", date.toISOString());
-    return date;
-  } catch (error) {
-    console.error("Error parsing datetime:", error);
-    // Return a default date/time if parsing fails
-    const defaultDate = new Date();
-    defaultDate.setHours(10, 0, 0, 0);
-    return defaultDate;
+  console.log("Parsing date:", dateString, "and time:", timeString);
+  
+  // Make sure we have a valid date string
+  if (!dateString || dateString.trim() === '') {
+    throw new Error("Empty date string");
   }
+  
+  const date = new Date(dateString);
+  
+  // Check if date is valid
+  if (isNaN(date.getTime())) {
+    throw new Error("Invalid date: " + dateString);
+  }
+  
+  // Default time if no time string is provided
+  if (!timeString || timeString.trim() === '') {
+    timeString = '10:00 AM';
+  }
+  
+  // Parse the time
+  let hours = 10;
+  let minutes = 0;
+  
+  // Try to parse the time string (handles both '10:00 AM' and '10:00')
+  const timeMatch = timeString.match(/(\d+):(\d+)(?:\s*(AM|PM))?/i);
+  if (timeMatch) {
+    hours = parseInt(timeMatch[1], 10);
+    minutes = parseInt(timeMatch[2], 10);
+    
+    // Handle PM
+    if (timeMatch[3] && timeMatch[3].toUpperCase() === 'PM' && hours < 12) {
+      hours += 12;
+    }
+    
+    // Handle 12 AM
+    if (timeMatch[3] && timeMatch[3].toUpperCase() === 'AM' && hours === 12) {
+      hours = 0;
+    }
+  }
+  
+  // Set the time
+  date.setHours(hours, minutes, 0, 0);
+  
+  console.log("Parsed datetime:", date.toISOString());
+  return date;
 }
 
 /**
