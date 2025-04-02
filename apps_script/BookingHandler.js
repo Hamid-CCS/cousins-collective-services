@@ -24,7 +24,7 @@ const CONFIG = {
   SPREADSHEET_ID: '1OW55nUXA8PwC57mpkkmdQ5wfs6TmyFgEiRYJ1UL9W28',
   
   // The name of the sheet to store bookings (default is 'Sheet1')
-  SHEET_NAME: 'Sheet1',
+  SHEET_NAME: 'Bookings', // Changed to match your actual sheet name seen in the diagnostic
   
   // Email settings
   SEND_EMAILS: false, // Disable emails for now to focus on other functionality
@@ -180,6 +180,20 @@ function doGet(e) {
   const calendarAccess = testCalendarAccess();
   const sheetAccess = testSheetAccess();
   
+  // Get actual user information
+  const userInfo = {
+    email: Session.getEffectiveUser().getEmail(),
+    timezone: Session.getScriptTimeZone()
+  };
+  logInfo('Script running as user', userInfo);
+  
+  // Check all OAuth scopes
+  const requiredScopes = [
+    'https://www.googleapis.com/auth/calendar',
+    'https://www.googleapis.com/auth/spreadsheets'
+  ];
+  const scopeStatus = checkOAuthScopes(requiredScopes);
+  
   return ContentService
     .createTextOutput(JSON.stringify({
       status: 'online',
@@ -187,9 +201,13 @@ function doGet(e) {
       timestamp: new Date().toISOString(),
       calendarAccess: calendarAccess,
       sheetAccess: sheetAccess,
-      scriptIdentity: {
-        email: Session.getEffectiveUser().getEmail(),
-        timezone: Session.getScriptTimeZone()
+      scriptIdentity: userInfo,
+      scopeStatus: scopeStatus,
+      config: {
+        calendarId: CONFIG.CALENDAR_ID,
+        spreadsheetId: CONFIG.SPREADSHEET_ID,
+        sheetName: CONFIG.SHEET_NAME,
+        timezone: CONFIG.TIMEZONE
       },
       logs: logs
     }))
@@ -278,15 +296,100 @@ function testSheetAccess() {
 }
 
 /**
+ * Check if all required OAuth scopes are authorized
+ */
+function checkOAuthScopes(requiredScopes) {
+  logInfo('Checking OAuth scopes');
+  
+  const results = {};
+  
+  try {
+    // Try calendar scope
+    if (requiredScopes.includes('https://www.googleapis.com/auth/calendar')) {
+      try {
+        const calendar = CalendarApp.getDefaultCalendar();
+        results['calendar'] = {
+          authorized: true,
+          name: calendar.getName()
+        };
+      } catch (e) {
+        results['calendar'] = {
+          authorized: false,
+          error: e.toString()
+        };
+      }
+    }
+    
+    // Try spreadsheet scope
+    if (requiredScopes.includes('https://www.googleapis.com/auth/spreadsheets')) {
+      try {
+        const spreadsheet = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+        results['spreadsheets'] = {
+          authorized: true,
+          name: spreadsheet.getName()
+        };
+      } catch (e) {
+        results['spreadsheets'] = {
+          authorized: false,
+          error: e.toString()
+        };
+      }
+    }
+    
+    return {
+      success: true,
+      results: results
+    };
+  } catch (error) {
+    logError('Error checking OAuth scopes', error);
+    return {
+      success: false,
+      error: error.toString()
+    };
+  }
+}
+
+/**
  * Add a booking to Google Calendar
  */
 function addToCalendar(booking) {
   logInfo('Starting calendar integration');
   
-  // Get the default calendar (primary)
   try {
-    const calendar = CalendarApp.getDefaultCalendar();
-    logInfo('Using default calendar', calendar.getName());
+    // Check which calendars we have access to
+    const allCalendars = CalendarApp.getAllOwnedCalendars();
+    const calendarNames = allCalendars.map(c => c.getName());
+    logInfo('Available calendars', calendarNames);
+    
+    // Try to use the specified calendar
+    let calendar;
+    if (CONFIG.CALENDAR_ID === 'primary') {
+      calendar = CalendarApp.getDefaultCalendar();
+      logInfo('Using default calendar', calendar.getName());
+    } else {
+      // Try to find by ID first
+      try {
+        calendar = CalendarApp.getCalendarById(CONFIG.CALENDAR_ID);
+        logInfo('Found calendar by ID', calendar.getName());
+      } catch (e) {
+        logError('Could not find calendar by ID', e);
+        
+        // Try to find by name as fallback
+        const matchingCalendars = allCalendars.filter(c => c.getName().includes('CCS'));
+        if (matchingCalendars.length > 0) {
+          calendar = matchingCalendars[0];
+          logInfo('Using calendar by name match', calendar.getName());
+        } else {
+          // Last resort: use default calendar
+          calendar = CalendarApp.getDefaultCalendar();
+          logInfo('Falling back to default calendar', calendar.getName());
+        }
+      }
+    }
+    
+    if (!calendar) {
+      throw new Error('Could not find any usable calendar');
+    }
     
     // Parse date and time
     const dateString = booking.date;
@@ -343,17 +446,72 @@ function addToSheet(booking) {
   logInfo('Starting spreadsheet integration');
   
   try {
+    // List all accessible spreadsheets for debugging
+    try {
+      const allSpreadsheets = SpreadsheetApp.getActiveSpreadsheet() ? 
+        [SpreadsheetApp.getActiveSpreadsheet().getName()] : 
+        ['No active spreadsheet'];
+      logInfo('Accessible spreadsheets', allSpreadsheets);
+    } catch (e) {
+      logInfo('No active spreadsheet available');
+    }
+    
     // Open the spreadsheet by ID
-    const spreadsheet = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
-    logInfo('Opened spreadsheet', spreadsheet.getName());
+    let spreadsheet;
+    try {
+      spreadsheet = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+      logInfo('Opened spreadsheet by ID', spreadsheet.getName());
+    } catch (idError) {
+      logError('Failed to open spreadsheet by ID', idError);
+      
+      // Try to find by name as fallback
+      try {
+        const spreadsheets = DriveApp.getFilesByName('CCS');
+        if (spreadsheets.hasNext()) {
+          const file = spreadsheets.next();
+          spreadsheet = SpreadsheetApp.open(file);
+          logInfo('Opened spreadsheet by name search', spreadsheet.getName());
+        } else {
+          throw new Error('Could not find spreadsheet by name');
+        }
+      } catch (nameError) {
+        logError('Failed to open spreadsheet by name', nameError);
+        throw new Error('Could not access spreadsheet: ' + idError.toString());
+      }
+    }
+    
+    if (!spreadsheet) {
+      throw new Error('Could not find any usable spreadsheet');
+    }
     
     // Get or create the sheet
     let sheet = spreadsheet.getSheetByName(CONFIG.SHEET_NAME);
+    
+    // If specified sheet doesn't exist, list available sheets for debugging
     if (!sheet) {
-      logInfo('Sheet not found, creating new sheet', CONFIG.SHEET_NAME);
-      sheet = spreadsheet.insertSheet(CONFIG.SHEET_NAME);
+      const allSheets = spreadsheet.getSheets();
+      const sheetNames = allSheets.map(s => s.getName());
+      logInfo('Available sheets', sheetNames);
       
-      // Add header row
+      // Try to use the first sheet
+      if (allSheets.length > 0) {
+        sheet = allSheets[0];
+        logInfo('Using first available sheet', sheet.getName());
+      } else {
+        // Create a new sheet
+        logInfo('No sheets found, creating new sheet', CONFIG.SHEET_NAME);
+        sheet = spreadsheet.insertSheet(CONFIG.SHEET_NAME);
+      }
+    } else {
+      logInfo('Found existing sheet', CONFIG.SHEET_NAME);
+    }
+    
+    // Check if the sheet has headers
+    const firstRow = sheet.getRange(1, 1, 1, 10).getValues()[0];
+    const hasHeaders = firstRow.some(cell => cell !== '');
+    
+    // Add header row if needed
+    if (!hasHeaders) {
       const headers = [
         'Name', 
         'Phone', 
@@ -373,8 +531,6 @@ function addToSheet(booking) {
       // Format header row
       sheet.getRange(1, 1, 1, headers.length).setFontWeight('bold');
       sheet.setFrozenRows(1);
-    } else {
-      logInfo('Found existing sheet', CONFIG.SHEET_NAME);
     }
     
     // Format the date

@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Google Apps Script Form</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            color: #4CAF50;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            cursor: pointer;
+        }
+        #resultMessage {
+            margin-top: 20px;
+            padding: 10px;
+            display: none;
+        }
+        .success {
+            background-color: #DFF2BF;
+            color: #4F8A10;
+        }
+        .error {
+            background-color: #FFBABA;
+            color: #D8000C;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test Booking Form</h1>
+    <form id="testForm">
+        <div class="form-group">
+            <label for="name">Name*</label>
+            <input type="text" id="name" name="name" value="Test Name" required>
+        </div>
+        <div class="form-group">
+            <label for="phone">Phone*</label>
+            <input type="tel" id="phone" name="phone" value="555-123-4567" required>
+        </div>
+        <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" value="test@example.com">
+        </div>
+        <div class="form-group">
+            <label for="service">Service*</label>
+            <input type="text" id="service" name="service" value="Test Service" required>
+        </div>
+        <div class="form-group">
+            <label for="date">Date*</label>
+            <input type="date" id="date" name="date" value="2025-04-05" required>
+        </div>
+        <div class="form-group">
+            <label for="time">Time</label>
+            <input type="time" id="time" name="time" value="10:00">
+        </div>
+        <div class="form-group">
+            <label for="address">Address*</label>
+            <input type="text" id="address" name="address" value="123 Test Street" required>
+        </div>
+        <div class="form-group">
+            <label for="details">Details</label>
+            <textarea id="details" name="details">Test booking details</textarea>
+        </div>
+        <button type="submit">Submit Test Form</button>
+    </form>
+    
+    <div id="resultMessage"></div>
+
+    <script>
+        document.getElementById('testForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            
+            // Collect form data
+            const booking = {
+                name: document.getElementById('name').value,
+                phone: document.getElementById('phone').value,
+                email: document.getElementById('email').value,
+                service: document.getElementById('service').value,
+                date: document.getElementById('date').value,
+                time: document.getElementById('time').value,
+                address: document.getElementById('address').value,
+                details: document.getElementById('details').value,
+                timestamp: new Date().toISOString()
+            };
+            
+            // Create a temporary form to submit directly
+            const tempForm = document.createElement('form');
+            tempForm.method = 'POST';
+            tempForm.action = 'https://script.google.com/macros/s/AKfycbzYgwGYfnzFTTN4J5t8fe16hMhjPG4qrgqlD5iSUHSEnkn-PFp_yZm96RiEdF87aYoz/exec';
+            
+            // Add data as hidden field
+            const dataField = document.createElement('input');
+            dataField.type = 'hidden';
+            dataField.name = 'data';
+            dataField.value = JSON.stringify(booking);
+            tempForm.appendChild(dataField);
+            
+            // Create iframe to handle submission
+            const iframe = document.createElement('iframe');
+            iframe.name = 'scriptFrame';
+            iframe.style.display = 'none';
+            document.body.appendChild(iframe);
+            
+            // Set form target to iframe
+            tempForm.target = 'scriptFrame';
+            
+            // Add form to document and submit
+            document.body.appendChild(tempForm);
+            tempForm.submit();
+            
+            // Show success message
+            const resultMessage = document.getElementById('resultMessage');
+            resultMessage.innerHTML = 'Form submitted! Check Google Calendar and Sheets for the test entry.';
+            resultMessage.className = 'success';
+            resultMessage.style.display = 'block';
+            
+            // Clean up after a delay
+            setTimeout(function() {
+                document.body.removeChild(tempForm);
+                document.body.removeChild(iframe);
+            }, 5000);
+        });
+    </script>
+</body>
+</html> 
