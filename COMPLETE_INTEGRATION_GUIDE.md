@@ -1,131 +1,115 @@
-# Complete Integration Guide for CCS Website
+# Cousins Collective Services - Website Integration Guide
 
-This guide walks you through the complete process of connecting your booking form to Google Calendar and Google Sheets, ensuring all booking data is stored and organized automatically.
+## Overview
 
-## Overview of the Solution
+This guide explains how the CCS website works with its booking system. The website is entirely client-side, using localStorage to store and manage booking data without requiring any server-side systems.
 
-Here's what we've set up:
+## Key Components
 
-1. **GitHub Pages Website**
-   - Beautiful, responsive website hosted for free
-   - Booking form for customers to request services
-   - Local backup of bookings in browser localStorage
-   - Password-protected bookings management page
+1. **Main Website (index.html)**
+   - User-facing website with service info, testimonials, and booking form
+   - Allows users to submit booking requests
+   - Stores bookings in browser localStorage
 
-2. **Google Apps Script Integration**
-   - Google Apps Script web app to process booking data
-   - Google Calendar integration to create events
-   - Google Sheets integration to store booking data
-   - Email notifications for new bookings
-   - Fallback mechanism if cloud integration fails
+2. **Admin Panel (bookings.html)**
+   - Password-protected admin interface
+   - Displays all bookings stored in localStorage
+   - Allows sorting, filtering, and exporting of booking data
+   - Enables status updates (New, Confirmed, Completed, Cancelled)
 
-This approach gives you:
-- **Reliability**: Bookings are stored locally even if cloud integration fails
-- **Organization**: All bookings are added to your Google Calendar automatically
-- **Record Keeping**: Complete history of bookings in Google Sheets
-- **Communication**: Email notifications for you and your customers
-- **Zero Cost**: Uses free tiers of GitHub Pages and Google Apps Script
+## How It Works: Booking Flow
 
-## Step-by-Step Implementation
+1. **Customer Submits Booking:**
+   - User fills out the booking form on the main website
+   - Form submission is handled by JavaScript in main.js
+   - Data is stored in browser localStorage with a unique ID
+   - Confirmation message displayed to user
 
-### Step 1: Set up Google APIs
+2. **Admin Views Bookings:**
+   - Admin accesses the bookings.html page
+   - Enters password (ccs2024admin)
+   - All bookings stored in localStorage are displayed
+   - Admin can filter, sort, and manage bookings
 
-Follow the instructions in `GOOGLE_API_SETUP.md` to:
-1. Enable Google Calendar and Google Sheets APIs
-2. Create a Google Sheet for booking data (name the sheet "Bookings")
+3. **Booking Management:**
+   - Update status (New → Confirmed → Completed/Cancelled)
+   - View full booking details
+   - Delete unwanted bookings
+   - Export to CSV for offline record-keeping
 
-### Step 2: Deploy the Google Apps Script
+## Data Structure
 
-1. Go to [Google Apps Script](https://script.google.com/) and create a new project
-2. Delete any code in the editor and copy-paste the entire contents of the `apps_script/BookingHandler.js` file
-3. Update the CONFIG variables at the top of the script:
-   - Set `CALENDAR_ID` to your Google Calendar ID (or use 'primary' for your main calendar)
-   - Set `SPREADSHEET_ID` to the ID of your Google Sheet (found in the URL)
-   - Set `ADMIN_EMAIL` to the email where you want to receive booking notifications
-   - Update the timezone if needed
-4. Save the project with a name like "CCS Booking Handler"
-5. Deploy the script as a web app:
-   - Click "Deploy" > "New deployment"
-   - Select "Web app" as the deployment type
-   - Set "Execute as" to "Me"
-   - Set "Who has access" to "Anyone"
-   - Click "Deploy"
-   - Copy the Web App URL that is generated
+Each booking is stored as a JSON object with the following structure:
 
-### Step 3: Update Your Website
+```json
+{
+  "id": "unique-identifier",
+  "name": "Customer Name",
+  "phone": "555-123-4567",
+  "email": "customer@example.com",
+  "service": "House Cleaning",
+  "date": "2023-04-15",
+  "time": "14:00",
+  "address": "123 Main St",
+  "details": "Additional booking information",
+  "timestamp": "2023-04-10T12:34:56.789Z",
+  "status": "new"
+}
+```
 
-After getting the Google Apps Script Web App URL from Step 2:
+## Important Considerations
 
-1. Open `docs/js/main.js` and locate this line:
-   ```javascript
-   const response = await fetch('https://script.google.com/macros/s/YOUR_APPS_SCRIPT_DEPLOYMENT_ID/exec', {
-   ```
-2. Replace `YOUR_APPS_SCRIPT_DEPLOYMENT_ID` with the deployment ID from your Apps Script web app URL
-   - The deployment ID is the long string of letters and numbers in the URL
-   - The URL format is: `https://script.google.com/macros/s/[DEPLOYMENT_ID]/exec`
-3. Commit and push these changes to GitHub
-4. Wait a few minutes for GitHub Pages to update
+1. **Data Persistence:**
+   - LocalStorage is browser and device-specific
+   - Clearing browser data will delete all stored bookings
+   - Regular CSV exports are recommended for data backup
 
-### Step 4: Test the Integration
+2. **Multiple Users:**
+   - Each admin device has its own independent data store
+   - Changes made on one device won't affect others
+   - Consider implementing a data synchronization strategy for multiple admins
 
-1. Submit a test booking through your website
-2. Verify it appears in:
-   - Your Google Calendar
-   - Your Google Sheet
-   - Your email inbox (if you provided an email in the booking)
-   - The bookings management page at `/bookings.html`
+3. **Storage Limits:**
+   - LocalStorage has a limit of 5-10MB depending on the browser
+   - After many bookings, consider archiving older data
+
+## Customization
+
+### Adding New Services
+
+1. Update the service options in the booking form (index.html)
+2. Update the filter options in the admin panel (bookings.html)
+3. Update the service cards in the services section (index.html)
+
+### Changing Admin Password
+
+1. Open bookings.html
+2. Find the line: `const adminPassword = "ccs2024admin";`
+3. Change to your desired password
 
 ## Troubleshooting
 
-### Booking Not Sent to Google
+### No Bookings Showing in Admin Panel
 
-If the form submits but data doesn't appear in your Google services:
+1. Ensure you're using the same browser and device where the bookings were made
+2. Check that localStorage is enabled in your browser
+3. Verify the admin password is correct
 
-1. Open browser DevTools (F12) and check the Console for errors
-2. Verify that the Apps Script deployment URL is correct in main.js
-3. Check that you've given the correct permissions in the Apps Script deployment
-4. Try submitting a booking again
+### Form Submission Issues
 
-### Emails Not Being Sent
-
-If booking data is saved but emails aren't being received:
-
-1. Check the `SEND_EMAILS` config is set to `true`
-2. Verify the `ADMIN_EMAIL` is correct
-3. In Google Apps Script editor, check the Execution logs for errors
-
-### CORS Errors
-
-If you see CORS (Cross-Origin Resource Sharing) errors:
-
-1. Make sure your Apps Script deployment is set to "Anyone, even anonymous" can access
-2. Try a different browser to rule out extension issues
-
-## Managing Bookings
-
-### In Google Calendar
-
-- Bookings appear as events in your calendar with all the customer details
-- You can reschedule by moving the events in your calendar
-- Use calendar reminders for upcoming bookings
-
-### In Google Sheets
-
-- All booking data is stored in your Google Sheet
-- You can add a "Status" column to track booking state (Confirmed, Completed, etc.)
-- Sort and filter bookings as needed
-
-### In the Website Admin Panel
-
-- Access the admin panel at `/bookings.html` with password: `ccs2024admin`
-- View all bookings stored locally in the browser
-- Export bookings to CSV if needed
+1. Check browser console for JavaScript errors
+2. Ensure all required fields are properly marked
+3. Verify that localStorage is not full or disabled
 
 ## Future Enhancements
 
-Once this basic integration is working, consider these future enhancements:
+For more sophisticated needs, consider:
 
-1. **SMS Notifications**: Add text message alerts for new bookings
-2. **Customer Portal**: Allow customers to view and manage their bookings
-3. **Advanced Calendar Integration**: Enable calendar availability checking
-4. **Online Payments**: Add payment processing capabilities 
+1. Cloud-based storage solution integration
+2. User account system for multiple admins
+3. Automated email notifications
+4. Booking reminders and follow-ups
+
+## Need Help?
+
+For assistance with the website, please contact the developer directly. 

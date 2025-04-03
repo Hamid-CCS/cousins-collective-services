@@ -133,9 +133,6 @@
     button.export-btn {
       background-color: #2196F3;
     }
-    button.sync-btn {
-      background-color: #673AB7;
-    }
     button.filter-btn {
       background-color: #FF9800;
     }
@@ -187,78 +184,163 @@
       border: 1px solid #ddd;
       border-radius: 4px;
     }
-    .google-sync-section {
-      margin: 20px auto;
-      max-width: 600px;
-      padding: 20px;
+    .storage-info {
+      text-align: center;
+      margin-bottom: 20px;
+      padding: 10px;
       background-color: #f5f5f5;
       border-radius: 8px;
-      display: none;
-    }
-    .google-sync-section.active {
-      display: block;
-    }
-    .google-sync-section h3 {
-      margin-top: 0;
-      color: #673AB7;
-    }
-    .form-group {
-      margin-bottom: 15px;
-    }
-    .form-group label {
-      display: block;
-      margin-bottom: 5px;
-      font-weight: 500;
-    }
-    .form-group input {
-      width: 100%;
-      padding: 10px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-    }
-    .sync-message {
-      margin-top: 10px;
-      padding: 10px;
-      border-radius: 4px;
-      display: none;
-    }
-    .sync-message.success {
-      background-color: #e8f5e9;
-      color: #4CAF50;
-      display: block;
-    }
-    .sync-message.error {
-      background-color: #ffebee;
-      color: #f44336;
-      display: block;
-    }
-    .status-dropdown {
-      padding: 4px 8px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      background-color: white;
-      cursor: pointer;
       font-size: 0.9em;
+    }
+    .export-options {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    /* Admin panel enhancements */
+    .booking-card {
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    /* Improved status indicators */
+    .status {
+      transition: background-color 0.3s ease, color 0.3s ease;
+      padding: 6px 10px;
+      font-weight: 600;
+      border-radius: 20px;
+      display: inline-block;
+      text-align: center;
+      min-width: 80px;
+    }
+    
+    /* Improved dropdown style */
+    .status-dropdown {
+      padding: 8px 12px;
+      border-radius: 4px;
+      border: 1px solid #ddd;
+      margin-right: 10px;
+      cursor: pointer;
+      background-color: white;
+      font-family: 'Poppins', sans-serif;
+    }
+    
+    .status-dropdown:focus {
+      outline: none;
+      border-color: #2196F3;
+      box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.1);
+    }
+    
+    /* Smoother animations */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .booking-card {
+      animation: fadeIn 0.3s ease-out;
+    }
+    
+    /* Better action buttons */
+    .booking-card .actions {
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+    
+    .booking-card .btn-action {
+      padding: 5px 10px;
+      border-radius: 4px;
+      transition: all 0.2s ease;
+    }
+    
+    .booking-card .btn-action:hover {
+      background-color: #e3f2fd;
+      transform: translateY(-2px);
+    }
+    
+    .booking-card .delete-btn {
+      color: #f44336;
+    }
+    
+    .booking-card .delete-btn:hover {
+      background-color: #ffebee;
+    }
+    
+    /* Better filter controls */
+    .filter-group {
+      background-color: #fff;
+      border-radius: 6px;
+      padding: 15px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+    
+    #resetFilters {
+      background-color: #f5f5f5;
+      color: #333;
+    }
+    
+    #resetFilters:hover {
+      background-color: #e0e0e0;
+    }
+    
+    /* Improved password screen */
+    .password-screen {
+      animation: fadeIn 0.5s ease-out;
+      background-color: white;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    }
+    
+    .password-input {
+      transition: all 0.3s ease;
+      border: 1px solid #ddd;
+    }
+    
+    .password-input:focus {
+      border-color: #4CAF50;
+      box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.1);
+      outline: none;
+    }
+    
+    /* Loading animations */
+    @keyframes spinner {
+      to { transform: rotate(360deg); }
+    }
+    
+    .fa-spinner {
+      animation: spinner 1s linear infinite;
+    }
+    
+    /* No bookings message */
+    .no-bookings {
+      animation: fadeIn 0.5s ease-out;
+      padding: 30px;
+      background-color: #f9f9f9;
+      border-radius: 8px;
+      text-align: center;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
     }
   </style>
 </head>
 <body>
   <div id="passwordScreen" class="password-screen">
-    <h1>CCS Bookings Manager</h1>
-    <p>Enter the admin password to view bookings:</p>
-    <input type="password" id="passwordInput" class="password-input" placeholder="Password">
-    <button id="loginBtn"><i class="fas fa-sign-in-alt"></i> Login</button>
+    <h2>CCS Bookings Manager</h2>
+    <p>Enter the admin password to continue:</p>
+    <input type="password" id="passwordInput" class="password-input" placeholder="Enter password">
+    <button id="loginBtn">Login</button>
     <p id="errorMessage" class="error-message">Incorrect password. Please try again.</p>
   </div>
   
   <div id="bookingsManager" style="display: none;">
-    <h1>Cousins Collective Services - Bookings Manager</h1>
+    <h1>CCS Bookings Manager</h1>
+    
+    <div class="storage-info">
+      <p><i class="fas fa-info-circle"></i> All bookings are stored locally in your browser. Make sure not to clear your browser data if you want to keep these records.</p>
+    </div>
     
     <div class="controls">
       <button id="refreshBtn"><i class="fas fa-sync-alt"></i> Refresh</button>
-      <button id="exportBtn" class="export-btn"><i class="fas fa-file-export"></i> Export CSV</button>
-      <button id="syncBtn" class="sync-btn"><i class="fas fa-cloud-upload-alt"></i> Google Sync</button>
-      <button id="filterBtn" class="filter-btn"><i class="fas fa-filter"></i> Filters</button>
+      <button id="filterBtn" class="filter-btn"><i class="fas fa-filter"></i> Filter</button>
+      <button id="exportBtn" class="export-btn"><i class="fas fa-file-export"></i> Export</button>
       <button id="clearBtn" class="clear"><i class="fas fa-trash-alt"></i> Clear All</button>
     </div>
     
@@ -266,10 +348,11 @@
       <div class="filter-group">
         <select id="filterService">
           <option value="">All Services</option>
-          <option value="Landscaping">Landscaping</option>
-          <option value="Car Detailing">Car Detailing</option>
-          <option value="Pressure Washing">Pressure Washing</option>
-          <option value="Photography">Photography</option>
+          <option value="House Cleaning">House Cleaning</option>
+          <option value="Moving Services">Moving Services</option>
+          <option value="Yard Work">Yard Work</option>
+          <option value="House Sitting">House Sitting</option>
+          <option value="Other">Other</option>
         </select>
         <select id="filterStatus">
           <option value="">All Statuses</option>
@@ -279,23 +362,8 @@
           <option value="cancelled">Cancelled</option>
         </select>
         <input type="date" id="filterDate" placeholder="Filter by date">
-        <button id="resetFilters"><i class="fas fa-times"></i> Reset</button>
+        <button id="resetFilters">Reset Filters</button>
       </div>
-    </div>
-    
-    <div id="googleSyncSection" class="google-sync-section">
-      <h3>Sync with Google Sheets</h3>
-      <p>Enter your Google Apps Script Web App URL to sync bookings directly with Google Sheets and Calendar.</p>
-      
-      <div class="form-group">
-        <label for="appsScriptUrl">Google Apps Script URL</label>
-        <input type="text" id="appsScriptUrl" placeholder="https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec" value="https://script.google.com/macros/s/AKfycbzYgwGYfnzFTTN4J5t8fe16hMhjPG4qrgqlD5iSUHSEnkn-PFp_yZm96RiEdF87aYoz/exec">
-      </div>
-      
-      <button id="performSyncBtn"><i class="fas fa-sync-alt"></i> Sync Bookings</button>
-      <button id="cancelSyncBtn"><i class="fas fa-times"></i> Cancel</button>
-      
-      <div id="syncMessage" class="sync-message"></div>
     </div>
     
     <div id="bookingList" class="booking-list">
@@ -317,35 +385,45 @@
       const refreshBtn = document.getElementById('refreshBtn');
       const clearBtn = document.getElementById('clearBtn');
       const exportBtn = document.getElementById('exportBtn');
-      const syncBtn = document.getElementById('syncBtn');
       const filterBtn = document.getElementById('filterBtn');
       const filters = document.getElementById('filters');
       const filterService = document.getElementById('filterService');
       const filterStatus = document.getElementById('filterStatus');
       const filterDate = document.getElementById('filterDate');
       const resetFilters = document.getElementById('resetFilters');
-      const googleSyncSection = document.getElementById('googleSyncSection');
-      const appsScriptUrl = document.getElementById('appsScriptUrl');
-      const performSyncBtn = document.getElementById('performSyncBtn');
-      const cancelSyncBtn = document.getElementById('cancelSyncBtn');
-      const syncMessage = document.getElementById('syncMessage');
       
       // Simple password protection
       const adminPassword = "ccs2024admin"; // Change this to your desired password
       
-      // Load saved Apps Script URL if exists
-      if (localStorage.getItem('ccsAppsScriptUrl')) {
-        appsScriptUrl.value = localStorage.getItem('ccsAppsScriptUrl');
-      }
-      
+      // Enhanced login experience
       loginBtn.addEventListener('click', function() {
-        if (passwordInput.value === adminPassword) {
-          passwordScreen.style.display = 'none';
-          bookingsManager.style.display = 'block';
-          displayBookings();
-        } else {
-          errorMessage.style.display = 'block';
-        }
+        loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Logging in...';
+        setTimeout(() => {
+          if (passwordInput.value === adminPassword) {
+            errorMessage.style.display = 'none';
+            
+            // Create a smooth transition
+            passwordScreen.style.opacity = '0';
+            setTimeout(() => {
+              passwordScreen.style.display = 'none';
+              bookingsManager.style.display = 'block';
+              bookingsManager.style.opacity = '0';
+              setTimeout(() => {
+                bookingsManager.style.opacity = '1';
+                displayBookings();
+              }, 50);
+            }, 300);
+            
+            // Store session data
+            sessionStorage.setItem('ccsAdminLoggedIn', 'true');
+          } else {
+            loginBtn.innerHTML = 'Login';
+            errorMessage.textContent = 'Incorrect password. Please try again.';
+            errorMessage.style.display = 'block';
+            passwordInput.value = '';
+            passwordInput.focus();
+          }
+        }, 800); // Simulate a short authentication delay
       });
       
       passwordInput.addEventListener('keypress', function(e) {
@@ -354,295 +432,362 @@
         }
       });
       
-      // Check if password already entered in this session
+      // Apply smooth transition if already logged in
       if (sessionStorage.getItem('ccsAdminLoggedIn') === 'true') {
         passwordScreen.style.display = 'none';
         bookingsManager.style.display = 'block';
+        bookingsManager.style.opacity = '1';
         displayBookings();
       }
       
-      // Toggle filters visibility
+      // Toggle filters visibility with animation
       filterBtn.addEventListener('click', function() {
-        filters.classList.toggle('active');
+        if (filters.classList.contains('active')) {
+          filters.style.maxHeight = filters.scrollHeight + 'px';
+          setTimeout(() => {
+            filters.style.maxHeight = '0px';
+            setTimeout(() => {
+              filters.classList.remove('active');
+            }, 300);
+          }, 10);
+        } else {
+          filters.classList.add('active');
+          filters.style.maxHeight = '0px';
+          setTimeout(() => {
+            filters.style.maxHeight = filters.scrollHeight + 'px';
+          }, 10);
+        }
       });
       
-      // Reset filters
+      // Reset filters with animation
       resetFilters.addEventListener('click', function() {
-        filterService.value = '';
-        filterStatus.value = '';
-        filterDate.value = '';
-        displayBookings(); // Refresh without filters
+        resetFilters.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Resetting...';
+        
+        setTimeout(() => {
+          filterService.value = '';
+          filterStatus.value = '';
+          filterDate.value = '';
+          resetFilters.innerHTML = 'Reset Filters';
+          displayBookings(); // Refresh without filters
+        }, 300);
       });
       
-      // Apply filters when changed
-      filterService.addEventListener('change', displayBookings);
-      filterStatus.addEventListener('change', displayBookings);
-      filterDate.addEventListener('change', displayBookings);
+      // Apply filters when changed with loading animation
+      const applyFilters = function() {
+        bookingList.innerHTML = '<div class="no-bookings"><i class="fas fa-spinner fa-spin"></i> Applying filters...</div>';
+        setTimeout(displayBookings, 300);
+      };
       
-      // Toggle Google sync section
-      syncBtn.addEventListener('click', function() {
-        googleSyncSection.classList.toggle('active');
-        syncMessage.className = 'sync-message'; // Reset message
-        syncMessage.textContent = '';
-      });
+      filterService.addEventListener('change', applyFilters);
+      filterStatus.addEventListener('change', applyFilters);
+      filterDate.addEventListener('change', applyFilters);
       
-      // Cancel sync
-      cancelSyncBtn.addEventListener('click', function() {
-        googleSyncSection.classList.remove('active');
-      });
-      
-      // Perform Google Sheets sync
-      performSyncBtn.addEventListener('click', async function() {
-        const url = appsScriptUrl.value.trim();
-        
-        // Remove any @ symbol at the beginning of the URL if present
-        const cleanUrl = url.startsWith('@') ? url.substring(1) : url;
-        
-        if (!cleanUrl || !cleanUrl.includes('script.google.com/macros/s/')) {
-          syncMessage.className = 'sync-message error';
-          syncMessage.textContent = 'Please enter a valid Google Apps Script URL';
-          return;
-        }
-        
-        // Save the URL for future use
-        localStorage.setItem('ccsAppsScriptUrl', cleanUrl);
-        
-        // Get bookings that need to be synced
-        const bookings = JSON.parse(localStorage.getItem('ccsBookings') || '[]');
-        
-        if (bookings.length === 0) {
-          syncMessage.className = 'sync-message error';
-          syncMessage.textContent = 'No bookings to sync';
-          return;
-        }
-        
-        // Show sync in progress
-        performSyncBtn.disabled = true;
-        performSyncBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Syncing...';
-        syncMessage.className = 'sync-message';
-        syncMessage.textContent = 'Syncing bookings with Google...';
-        
-        // Process each booking
-        let successCount = 0;
-        let failureCount = 0;
-        
-        // Create a hidden iframe to handle form submissions
-        const iframe = document.createElement('iframe');
-        iframe.name = 'googleScriptFrame';
-        iframe.style.display = 'none';
-        document.body.appendChild(iframe);
-        
-        // Process each booking sequentially
-        for (let i = 0; i < bookings.length; i++) {
-          const booking = bookings[i];
-          
-          // Skip already synced bookings
-          if (booking.syncedWithGoogle) {
-            continue;
-          }
-          
-          try {
-            // Create a temporary form in the DOM
-            const tempForm = document.createElement('form');
-            tempForm.style.display = 'none';
-            tempForm.method = 'POST';
-            tempForm.action = cleanUrl;
-            tempForm.target = 'googleScriptFrame';
-            
-            // Add the data as a hidden field
-            const dataField = document.createElement('input');
-            dataField.type = 'hidden';
-            dataField.name = 'data';
-            dataField.value = JSON.stringify(booking);
-            tempForm.appendChild(dataField);
-            
-            // Add form to body and submit it
-            document.body.appendChild(tempForm);
-            tempForm.submit();
-            
-            // Wait a bit to avoid overwhelming the Apps Script
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            
-            // Mark as synced
-            bookings[i].syncedWithGoogle = true;
-            bookings[i].status = bookings[i].status || 'new';
-            successCount++;
-            
-            // Clean up the form
-            document.body.removeChild(tempForm);
-            
-          } catch (error) {
-            console.error(`Error syncing booking ${i}:`, error);
-            failureCount++;
-          }
-        }
-        
-        // Remove the iframe after all submissions
-        document.body.removeChild(iframe);
-        
-        // Update localStorage with synced status
-        localStorage.setItem('ccsBookings', JSON.stringify(bookings));
-        
-        // Show results
-        syncMessage.className = 'sync-message ' + (failureCount > 0 ? 'warning' : 'success');
-        syncMessage.textContent = `Sync completed: ${successCount} bookings synced` + 
-                                  (failureCount > 0 ? `, ${failureCount} failed` : '');
-        
-        // Update booking display
-        displayBookings();
-        
-        // Reset button
-        performSyncBtn.disabled = false;
-        performSyncBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Sync Bookings';
-      });
-      
+      // Enhanced booking display function
       function displayBookings() {
-        // Mark as logged in for this session
-        sessionStorage.setItem('ccsAdminLoggedIn', 'true');
-        
+        // Get bookings from localStorage
         const bookings = JSON.parse(localStorage.getItem('ccsBookings') || '[]');
         
         if (bookings.length === 0) {
-          bookingList.innerHTML = '<div class="no-bookings">No bookings found.</div>';
+          bookingList.innerHTML = `
+            <div class="no-bookings">
+              <i class="fas fa-clipboard-list" style="font-size: 2em; color: #ccc; margin-bottom: 15px;"></i>
+              <h3>No Bookings Found</h3>
+              <p>When customers make bookings, they will appear here.</p>
+            </div>
+          `;
           return;
         }
         
         // Apply filters if set
         let filteredBookings = bookings;
+        let filtersApplied = false;
         
         if (filterService.value) {
           filteredBookings = filteredBookings.filter(b => 
             b.service && b.service.includes(filterService.value)
           );
+          filtersApplied = true;
         }
         
         if (filterStatus.value) {
           filteredBookings = filteredBookings.filter(b => 
             (b.status || 'new').toLowerCase() === filterStatus.value
           );
+          filtersApplied = true;
         }
         
         if (filterDate.value) {
           filteredBookings = filteredBookings.filter(b => 
             b.date === filterDate.value
           );
+          filtersApplied = true;
         }
         
         if (filteredBookings.length === 0) {
-          bookingList.innerHTML = '<div class="no-bookings">No bookings match your filters.</div>';
+          bookingList.innerHTML = `
+            <div class="no-bookings">
+              <i class="fas fa-filter" style="font-size: 2em; color: #f9a825; margin-bottom: 15px;"></i>
+              <h3>No Matching Bookings</h3>
+              <p>No bookings match your current filters.</p>
+              <button id="clearFiltersBtn" class="btn-secondary" style="margin-top: 15px;">Clear Filters</button>
+            </div>
+          `;
+          
+          document.getElementById('clearFiltersBtn').addEventListener('click', function() {
+            filterService.value = '';
+            filterStatus.value = '';
+            filterDate.value = '';
+            displayBookings();
+          });
+          
           return;
         }
         
         // Sort bookings by date, newest first
         filteredBookings.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
         
-        bookingList.innerHTML = '';
+        // Clear the list with a fade effect
+        bookingList.style.opacity = '0';
         
-        filteredBookings.forEach((booking, index) => {
-          const bookingCard = document.createElement('div');
-          bookingCard.className = 'booking-card';
+        setTimeout(() => {
+          bookingList.innerHTML = '';
           
-          // Format the date for display
-          let formattedDate = 'Invalid date';
-          try {
-            const date = new Date(booking.date);
-            formattedDate = date.toLocaleDateString('en-US', {
-              weekday: 'long',
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric'
-            });
-          } catch (e) {
-            console.error('Date formatting error:', e);
+          // Add filter summary if filters are applied
+          if (filtersApplied) {
+            const filterSummary = document.createElement('div');
+            filterSummary.className = 'filter-summary';
+            filterSummary.style.padding = '10px';
+            filterSummary.style.marginBottom = '20px';
+            filterSummary.style.backgroundColor = '#f5f5f5';
+            filterSummary.style.borderRadius = '8px';
+            filterSummary.style.fontSize = '0.9em';
+            
+            let summaryText = `Showing ${filteredBookings.length} of ${bookings.length} bookings`;
+            const filterDetails = [];
+            
+            if (filterService.value) filterDetails.push(`Service: ${filterService.value}`);
+            if (filterStatus.value) filterDetails.push(`Status: ${filterStatus.value.charAt(0).toUpperCase() + filterStatus.value.slice(1)}`);
+            if (filterDate.value) {
+              const formattedDate = new Date(filterDate.value).toLocaleDateString();
+              filterDetails.push(`Date: ${formattedDate}`);
+            }
+            
+            if (filterDetails.length > 0) {
+              summaryText += ` (Filtered by: ${filterDetails.join(', ')})`;
+            }
+            
+            filterSummary.textContent = summaryText;
+            bookingList.appendChild(filterSummary);
           }
           
-          // Set booking status if not present
-          const status = booking.status || 'new';
-          
-          bookingCard.innerHTML = `
-            <h3>${booking.service} for ${booking.name}</h3>
-            <p><span class="label">Phone:</span> ${booking.phone}</p>
-            <p><span class="label">Email:</span> ${booking.email || 'Not provided'}</p>
-            <p><span class="label">Date:</span> ${formattedDate}</p>
-            <p><span class="label">Time:</span> ${booking.time || '10:00 AM'}</p>
-            <p><span class="label">Address:</span> ${booking.address}</p>
-            <p><span class="label">Details:</span> ${booking.details || 'No details provided'}</p>
-            <p><span class="timestamp">Booked on: ${new Date(booking.timestamp).toLocaleString()}</span></p>
-            <p>
-              <span class="label">Status:</span> 
-              <select class="status-dropdown" data-index="${index}">
-                <option value="new" ${status === 'new' ? 'selected' : ''}>New</option>
-                <option value="confirmed" ${status === 'confirmed' ? 'selected' : ''}>Confirmed</option>
-                <option value="completed" ${status === 'completed' ? 'selected' : ''}>Completed</option>
-                <option value="cancelled" ${status === 'cancelled' ? 'selected' : ''}>Cancelled</option>
-              </select>
-              <span class="status status-${status}">${status.charAt(0).toUpperCase() + status.slice(1)}</span>
-            </p>
-            <div class="actions">
-              <button class="btn-action call-btn" data-phone="${booking.phone}">
-                <i class="fas fa-phone"></i> Call
-              </button>
-              ${booking.email && booking.email !== 'Not provided' ? 
-                `<button class="btn-action email-btn" data-email="${booking.email}">
-                  <i class="fas fa-envelope"></i> Email
-                </button>` : ''}
-              <button class="btn-action map-btn" data-address="${booking.address}">
-                <i class="fas fa-map-marker-alt"></i> Map
-              </button>
-            </div>
-          `;
-          
-          bookingList.appendChild(bookingCard);
-        });
-        
-        // Add event listeners for status dropdowns
-        document.querySelectorAll('.status-dropdown').forEach(dropdown => {
-          dropdown.addEventListener('change', function() {
-            const index = this.getAttribute('data-index');
-            const bookings = JSON.parse(localStorage.getItem('ccsBookings') || '[]');
+          // Add each booking with a staggered animation
+          filteredBookings.forEach((booking, index) => {
+            const bookingCard = document.createElement('div');
+            bookingCard.className = 'booking-card';
+            bookingCard.style.animationDelay = `${index * 0.05}s`;
             
-            if (bookings[index]) {
-              bookings[index].status = this.value;
-              localStorage.setItem('ccsBookings', JSON.stringify(bookings));
-              
-              // Update the status badge
-              const statusBadge = this.nextElementSibling;
-              statusBadge.className = `status status-${this.value}`;
-              statusBadge.textContent = this.value.charAt(0).toUpperCase() + this.value.slice(1);
+            // Format the date for display
+            let formattedDate = 'Invalid date';
+            try {
+              const date = new Date(booking.date);
+              formattedDate = date.toLocaleDateString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+              });
+            } catch (e) {
+              console.error('Date formatting error:', e);
             }
+            
+            // Set booking status if not present
+            const status = booking.status || 'new';
+            
+            // Color-coded service type badge
+            let serviceColor = '#2196F3'; // default blue
+            if (booking.service.includes('House Cleaning')) {
+              serviceColor = '#4CAF50'; // green
+            } else if (booking.service.includes('Moving')) {
+              serviceColor = '#FF9800'; // orange
+            } else if (booking.service.includes('Yard')) {
+              serviceColor = '#8BC34A'; // light green
+            } else if (booking.service.includes('House Sitting')) {
+              serviceColor = '#9C27B0'; // purple
+            }
+            
+            bookingCard.innerHTML = `
+              <h3>
+                <span style="color: ${serviceColor};">${booking.service}</span> 
+                for ${booking.name}
+              </h3>
+              <p><span class="label">Phone:</span> ${booking.phone}</p>
+              <p><span class="label">Email:</span> ${booking.email || 'Not provided'}</p>
+              <p><span class="label">Date:</span> ${formattedDate}</p>
+              <p><span class="label">Time:</span> ${booking.time || 'Not specified'}</p>
+              <p><span class="label">Address:</span> ${booking.address}</p>
+              <p><span class="label">Details:</span> ${booking.details || 'No details provided'}</p>
+              <p><span class="timestamp">Booked on: ${new Date(booking.timestamp).toLocaleString()}</span></p>
+              <p>
+                <span class="label">Status:</span> 
+                <select class="status-dropdown" data-index="${index}">
+                  <option value="new" ${status === 'new' ? 'selected' : ''}>New</option>
+                  <option value="confirmed" ${status === 'confirmed' ? 'selected' : ''}>Confirmed</option>
+                  <option value="completed" ${status === 'completed' ? 'selected' : ''}>Completed</option>
+                  <option value="cancelled" ${status === 'cancelled' ? 'selected' : ''}>Cancelled</option>
+                </select>
+                <span class="status status-${status}">${status.charAt(0).toUpperCase() + status.slice(1)}</span>
+              </p>
+              <div class="actions">
+                <button class="btn-action call-btn" data-phone="${booking.phone}">
+                  <i class="fas fa-phone"></i> Call
+                </button>
+                ${booking.email && booking.email !== 'Not provided' ? 
+                  `<button class="btn-action email-btn" data-email="${booking.email}">
+                    <i class="fas fa-envelope"></i> Email
+                  </button>` : ''}
+                <button class="btn-action map-btn" data-address="${booking.address}">
+                  <i class="fas fa-map-marker-alt"></i> Map
+                </button>
+                <button class="btn-action delete-btn" data-index="${index}">
+                  <i class="fas fa-trash-alt"></i> Delete
+                </button>
+              </div>
+            `;
+            
+            bookingList.appendChild(bookingCard);
           });
-        });
-        
-        // Add event listeners for action buttons
-        document.querySelectorAll('.call-btn').forEach(btn => {
-          btn.addEventListener('click', function() {
-            window.location.href = `tel:${this.getAttribute('data-phone')}`;
+          
+          // Fade in the content
+          bookingList.style.opacity = '1';
+          
+          // Add event listeners for status dropdowns
+          document.querySelectorAll('.status-dropdown').forEach(dropdown => {
+            dropdown.addEventListener('change', function() {
+              const index = parseInt(this.getAttribute('data-index'));
+              const bookings = JSON.parse(localStorage.getItem('ccsBookings') || '[]');
+              
+              if (bookings[index]) {
+                // Show a brief loading indicator
+                const statusBadge = this.nextElementSibling;
+                const originalContent = statusBadge.innerHTML;
+                statusBadge.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                
+                setTimeout(() => {
+                  bookings[index].status = this.value;
+                  localStorage.setItem('ccsBookings', JSON.stringify(bookings));
+                  
+                  // Update the status badge
+                  statusBadge.className = `status status-${this.value}`;
+                  statusBadge.textContent = this.value.charAt(0).toUpperCase() + this.value.slice(1);
+                  
+                  // Give visual feedback
+                  statusBadge.style.transform = 'scale(1.1)';
+                  setTimeout(() => {
+                    statusBadge.style.transform = 'scale(1)';
+                  }, 200);
+                }, 300);
+              }
+            });
           });
-        });
-        
-        document.querySelectorAll('.email-btn').forEach(btn => {
-          btn.addEventListener('click', function() {
-            window.location.href = `mailto:${this.getAttribute('data-email')}`;
+          
+          // Add event listeners for action buttons with feedback
+          document.querySelectorAll('.call-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+              const phone = this.getAttribute('data-phone');
+              this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Calling...';
+              
+              setTimeout(() => {
+                window.location.href = `tel:${phone}`;
+                this.innerHTML = '<i class="fas fa-phone"></i> Call';
+              }, 300);
+            });
           });
-        });
-        
-        document.querySelectorAll('.map-btn').forEach(btn => {
-          btn.addEventListener('click', function() {
-            const address = this.getAttribute('data-address');
-            window.open(`https://maps.google.com/?q=${encodeURIComponent(address)}`, '_blank');
+          
+          document.querySelectorAll('.email-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+              const email = this.getAttribute('data-email');
+              this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Opening...';
+              
+              setTimeout(() => {
+                window.location.href = `mailto:${email}`;
+                this.innerHTML = '<i class="fas fa-envelope"></i> Email';
+              }, 300);
+            });
           });
-        });
+          
+          document.querySelectorAll('.map-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+              const address = this.getAttribute('data-address');
+              this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
+              
+              setTimeout(() => {
+                window.open(`https://maps.google.com/?q=${encodeURIComponent(address)}`, '_blank');
+                this.innerHTML = '<i class="fas fa-map-marker-alt"></i> Map';
+              }, 300);
+            });
+          });
+          
+          // Add event listeners for delete buttons
+          document.querySelectorAll('.delete-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+              if (confirm('Are you sure you want to delete this booking?')) {
+                const index = parseInt(this.getAttribute('data-index'));
+                const bookings = JSON.parse(localStorage.getItem('ccsBookings') || '[]');
+                
+                if (bookings[index]) {
+                  // Show deletion in progress
+                  const card = this.closest('.booking-card');
+                  card.style.opacity = '0.5';
+                  card.style.transform = 'scale(0.95)';
+                  
+                  setTimeout(() => {
+                    bookings.splice(index, 1);
+                    localStorage.setItem('ccsBookings', JSON.stringify(bookings));
+                    displayBookings();
+                  }, 300);
+                }
+              }
+            });
+          });
+        }, 300);
       }
       
-      refreshBtn.addEventListener('click', displayBookings);
+      // Enhanced refresh button
+      refreshBtn.addEventListener('click', function() {
+        refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Refreshing...';
+        bookingList.style.opacity = '0.5';
+        
+        setTimeout(() => {
+          displayBookings();
+          refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Refresh';
+        }, 500);
+      });
       
+      // Enhanced clear button
       clearBtn.addEventListener('click', function() {
         if (confirm('Are you sure you want to clear all bookings? This cannot be undone.')) {
-          localStorage.removeItem('ccsBookings');
-          displayBookings();
+          clearBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Clearing...';
+          
+          setTimeout(() => {
+            localStorage.removeItem('ccsBookings');
+            
+            // Show brief confirmation
+            bookingList.innerHTML = `
+              <div class="no-bookings" style="background-color: #ffebee;">
+                <i class="fas fa-check-circle" style="font-size: 2em; color: #f44336; margin-bottom: 15px;"></i>
+                <h3>All Bookings Cleared</h3>
+              </div>
+            `;
+            
+            setTimeout(() => {
+              displayBookings();
+              clearBtn.innerHTML = '<i class="fas fa-trash-alt"></i> Clear All';
+            }, 1500);
+          }, 500);
         }
       });
       
+      // Enhanced export button
       exportBtn.addEventListener('click', function() {
         const bookings = JSON.parse(localStorage.getItem('ccsBookings') || '[]');
         
@@ -651,68 +796,99 @@
           return;
         }
         
-        // Apply current filters to export
-        let filteredBookings = bookings;
+        exportBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Exporting...';
         
-        if (filterService.value) {
-          filteredBookings = filteredBookings.filter(b => 
-            b.service && b.service.includes(filterService.value)
-          );
-        }
-        
-        if (filterStatus.value) {
-          filteredBookings = filteredBookings.filter(b => 
-            (b.status || 'new').toLowerCase() === filterStatus.value
-          );
-        }
-        
-        if (filterDate.value) {
-          filteredBookings = filteredBookings.filter(b => 
-            b.date === filterDate.value
-          );
-        }
-        
-        // Create CSV content
-        let csvContent = 'Name,Phone,Email,Service,Date,Time,Address,Details,Timestamp,Status,Synced\n';
-        
-        filteredBookings.forEach(booking => {
-          const row = [
-            booking.name,
-            booking.phone,
-            booking.email || 'Not provided',
-            booking.service,
-            booking.date,
-            booking.time || '10:00 AM',
-            booking.address,
-            (booking.details || 'No details provided').replace(/,/g, ';'),
-            booking.timestamp,
-            booking.status || 'new',
-            booking.syncedWithGoogle ? 'Yes' : 'No'
-          ];
+        setTimeout(() => {
+          // Apply current filters to export
+          let filteredBookings = bookings;
           
-          // Properly escape CSV fields
-          const escapedRow = row.map(field => {
-            const stringField = String(field);
-            // If field contains commas, quotes, or newlines, enclose in quotes
-            if (stringField.includes(',') || stringField.includes('"') || stringField.includes('\n')) {
-              return `"${stringField.replace(/"/g, '""')}"`;
-            }
-            return stringField;
+          if (filterService.value) {
+            filteredBookings = filteredBookings.filter(b => 
+              b.service && b.service.includes(filterService.value)
+            );
+          }
+          
+          if (filterStatus.value) {
+            filteredBookings = filteredBookings.filter(b => 
+              (b.status || 'new').toLowerCase() === filterStatus.value
+            );
+          }
+          
+          if (filterDate.value) {
+            filteredBookings = filteredBookings.filter(b => 
+              b.date === filterDate.value
+            );
+          }
+          
+          // Create CSV content
+          let csvContent = 'Name,Phone,Email,Service,Date,Time,Address,Details,Timestamp,Status\n';
+          
+          filteredBookings.forEach(booking => {
+            const row = [
+              booking.name,
+              booking.phone,
+              booking.email || 'Not provided',
+              booking.service,
+              booking.date,
+              booking.time || 'Not specified',
+              booking.address,
+              (booking.details || 'No details provided').replace(/,/g, ';'),
+              booking.timestamp,
+              booking.status || 'new'
+            ];
+            
+            // Properly escape CSV fields
+            const escapedRow = row.map(field => {
+              const stringField = String(field);
+              // If field contains commas, quotes, or newlines, enclose in quotes
+              if (stringField.includes(',') || stringField.includes('"') || stringField.includes('\n')) {
+                return `"${stringField.replace(/"/g, '""')}"`;
+              }
+              return stringField;
+            });
+            
+            csvContent += escapedRow.join(',') + '\n';
           });
           
-          csvContent += escapedRow.join(',') + '\n';
-        });
-        
-        // Create download link
-        const encodedUri = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvContent);
-        const link = document.createElement('a');
-        link.setAttribute('href', encodedUri);
-        link.setAttribute('download', `ccs-bookings-${new Date().toISOString().slice(0,10)}.csv`);
-        document.body.appendChild(link);
-        
-        // Trigger download and remove link
-        link.click();
-        document.body.removeChild(link);
+          // Create a download link
+          const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.setAttribute('href', url);
+          link.setAttribute('download', `ccs_bookings_${new Date().toISOString().split('T')[0]}.csv`);
+          link.style.display = 'none';
+          document.body.appendChild(link);
+          
+          // Trigger download and clean up
+          link.click();
+          document.body.removeChild(link);
+          
+          // Reset button state
+          exportBtn.innerHTML = '<i class="fas fa-file-export"></i> Export';
+          
+          // Show success message
+          const successMsg = document.createElement('div');
+          successMsg.style.position = 'fixed';
+          successMsg.style.top = '20px';
+          successMsg.style.left = '50%';
+          successMsg.style.transform = 'translateX(-50%)';
+          successMsg.style.padding = '10px 20px';
+          successMsg.style.backgroundColor = '#4CAF50';
+          successMsg.style.color = 'white';
+          successMsg.style.borderRadius = '4px';
+          successMsg.style.boxShadow = '0 2px 10px rgba(0,0,0,0.2)';
+          successMsg.style.zIndex = '1000';
+          successMsg.innerHTML = `<i class="fas fa-check-circle"></i> ${filteredBookings.length} bookings exported successfully`;
+          
+          document.body.appendChild(successMsg);
+          
+          setTimeout(() => {
+            successMsg.style.opacity = '0';
+            setTimeout(() => {
+              document.body.removeChild(successMsg);
+            }, 300);
+          }, 3000);
+        }, 800);
       });
     });
   </script>

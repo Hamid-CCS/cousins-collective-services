@@ -1,117 +1,89 @@
 # Cousins Collective Services (CCS) Website
 
-A responsive, modern website for Cousins Collective Services, featuring an integrated booking system with Google Calendar and Google Sheets integration.
+A simple yet effective website for Cousins Collective Services that uses browser localStorage for booking management.
 
-## Overview
+## Key Features
 
-The CCS website is built as a static site hosted on GitHub Pages, with a powerful booking system that integrates with Google services for appointment tracking and management.
+- Modern, responsive website design
+- Clean, user-friendly booking form
+- Service catalog showcasing available services
+- Secure admin panel to manage bookings
+- Data stored in browser localStorage
+- CSV export capability for record keeping
+- No server-side dependencies required
 
-### Features
+## How It Works
 
-- **Modern, Responsive Design:** Looks great on all devices from mobile to desktop
-- **Service Showcase:** Displays all services offered by CCS with attractive cards
-- **Online Booking System:** Allows customers to book services directly through the website
-- **Google Integration:** 
-  - Automatically adds bookings to Google Calendar
-  - Stores all booking data in Google Sheets
-  - Sends email confirmations to customers and administrators
-- **Local Backup:** All bookings are stored locally as a backup in case of connectivity issues
-- **Admin Dashboard:** Password-protected booking management interface
-  - View all bookings
-  - Filter and search bookings
-  - Update booking statuses
-  - Export bookings to CSV
-  - One-click sync with Google services
+The CCS website uses client-side storage (localStorage) to handle all booking data. This approach:
+
+- Eliminates the need for backend servers
+- Works perfectly with GitHub Pages hosting
+- Provides a fast, responsive user experience
+- Keeps data private to each device
+
+## Accessing the Website
+
+The website is deployed on GitHub Pages and can be accessed here:
+[https://hamid-ccs.github.io/cousins-collective-services/](https://hamid-ccs.github.io/cousins-collective-services/)
+
+### Using the Admin Panel
+
+1. Go to the bookings management page: [https://hamid-ccs.github.io/cousins-collective-services/bookings.html](https://hamid-ccs.github.io/cousins-collective-services/bookings.html)
+2. Enter the password: `ccs2024admin`
+3. View, filter, and manage all bookings
+4. Export bookings to CSV for offline record keeping
+
+## Available Services
+
+CCS currently offers the following services:
+
+- House Cleaning
+- Moving Services
+- Yard Work
+- House Sitting
 
 ## Technical Details
 
-- **Frontend:** HTML5, CSS3, JavaScript (vanilla)
+- **Front-end:** HTML5, CSS3, vanilla JavaScript
 - **Hosting:** GitHub Pages
-- **Backend Integration:** Google Apps Script
-- **Data Storage:** Google Sheets
-- **Scheduling:** Google Calendar
+- **Data Storage:** Browser localStorage
+- **Booking Status Tracking:** New, Confirmed, Completed, Cancelled
 
-## Getting Started
+## Browser Compatibility
 
-### Viewing the Website
+The website is compatible with all modern browsers:
+- Chrome
+- Firefox
+- Safari
+- Edge
 
-The website is hosted at: [https://hamid-ccs.github.io/cousins-collective-services/](https://hamid-ccs.github.io/cousins-collective-services/)
+## Local Development
 
-### Accessing the Admin Panel
-
-1. Navigate to [https://hamid-ccs.github.io/cousins-collective-services/bookings.html](https://hamid-ccs.github.io/cousins-collective-services/bookings.html)
-2. Enter the admin password: `ccs2024admin`
-3. From here you can view all bookings, filter them, update their status, and export to CSV
-
-### Syncing with Google Services
-
-To set up Google integration:
-
-1. Follow the instructions in `GOOGLE_API_SETUP.md` to set up your Google services
-2. Deploy the Apps Script as described in `COMPLETE_INTEGRATION_GUIDE.md`
-3. Update the script URL in your website as detailed in the guides
-4. Test the integration by submitting a booking form
-
-## Documentation
-
-This repository contains several documentation files to help you understand and maintain the system:
-
-- **README.md**: This overview file
-- **GOOGLE_API_SETUP.md**: Instructions for setting up Google Calendar and Sheets
-- **COMPLETE_INTEGRATION_GUIDE.md**: Comprehensive guide for the entire integration
-
-## Project Structure
-
-```
-/
-├── docs/                      # Website files (GitHub Pages root)
-│   ├── index.html             # Homepage
-│   ├── bookings.html          # Admin booking management panel
-│   ├── css/                   # CSS stylesheets
-│   ├── js/                    # JavaScript files
-│   └── images/                # Image assets
-├── apps_script/               # Google Apps Script files
-│   └── BookingHandler.js      # Main script for Google integration
-├── README.md                  # This file
-└── GOOGLE_API_SETUP.md        # Google API setup guide
-```
-
-## Google Integration
-
-The booking system integrates with Google services to provide a seamless experience:
-
-1. **Customer Submits Booking**: When a customer submits a booking on the website
-2. **Local Storage**: The booking is saved in the browser's localStorage as a backup
-3. **Google Apps Script**: The booking data is sent to a Google Apps Script web app
-4. **Google Calendar**: A calendar event is created with all booking details
-5. **Google Sheets**: The booking information is stored in a spreadsheet for record-keeping
-6. **Email Notifications**: Confirmation emails are sent to both the customer and admin
-
-## Maintaining the Website
-
-### Making Changes
+To work on this project locally:
 
 1. Clone this repository
-2. Make changes to files in the `docs/` directory
-3. Commit and push to GitHub
-4. GitHub Pages will automatically update the live site
+2. Open the project in your code editor
+3. Make changes to files in the `docs/` directory
+4. Test locally by opening the HTML files in your browser
+5. Commit and push to GitHub to update the live site
 
-### Handling Bookings
+## Data Considerations
 
-New bookings automatically appear in:
-- Your Google Calendar
-- Your Google Sheets spreadsheet
-- The admin panel at `/bookings.html`
+Since data is stored in localStorage:
+- Each user/device has its own independent data store
+- Clearing browser data will remove stored bookings
+- Regular exports are recommended for data backup
 
 ## Future Enhancements
 
-Planned improvements for the system:
+Potential improvements for future versions:
 
-1. SMS notifications for new bookings
-2. Customer portal for viewing and managing bookings
-3. Availability checking against the Google Calendar
-4. Integration with payment processing services
+- Filter and search bookings by multiple criteria
+- User-customizable service categories
+- Admin email notifications for new bookings
+- Encrypted data storage with a passkey
+- Implement secure cloud storage when feasible
 
-## Support
+## License
 
-For questions or assistance, contact: cousinscollectiveservices@gmail.com 
+See the LICENSE file for details. 

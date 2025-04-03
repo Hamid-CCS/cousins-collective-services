@@ -1,126 +1,33 @@
-# Google API Setup for Cousins Collective Services
+# Google API Integration - Currently Not Implemented
 
-This guide will walk you through setting up Google Calendar and Google Sheets integration for your booking system using Google Apps Script.
+## Important Note
 
-## Step 1: Create/Configure Google Cloud Project
+The Cousins Collective Services website **currently does not use Google APIs**. Instead, all booking data is stored locally in the browser's localStorage. This approach was chosen for simplicity and reliability.
 
-1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+## Why We Switched to LocalStorage
 
-2. Select your existing project "enduring-branch-455605-j6" or create a new project
+- **Simplicity**: No need to manage API credentials or worry about quota limits
+- **Reliability**: Works offline and doesn't depend on external services
+- **Privacy**: All data stays on the user's device
+- **Zero Cost**: No billing or subscription required
 
-3. Enable the required APIs:
-   - Navigate to "APIs & Services" > "Library"
-   - Search for and enable these APIs:
-     - Google Calendar API
-     - Google Sheets API
-     - Apps Script API
+## If You Need Google Integration in the Future
 
-## Step 2: Create a Google Sheet for Bookings
+If you decide to implement Google integration in the future, you would need to:
 
-1. Go to [Google Sheets](https://sheets.google.com/)
+1. Enable the Google Calendar API and Google Sheets API in the Google Cloud Console
+2. Create OAuth credentials for web applications
+3. Implement a Google Apps Script to handle the integration between your website and Google services
+4. Update the website code to send booking data to the Google Apps Script instead of storing it in localStorage
 
-2. Create a new spreadsheet named "CCS Bookings"
+## Data Export Options
 
-3. Set up the following columns in the first row:
-   - Name
-   - Phone
-   - Email
-   - Service
-   - Date
-   - Time
-   - Address
-   - Details
-   - Timestamp
-   - Status
+Even without Google integration, you can still:
 
-4. Note the Spreadsheet ID (found in the URL):
-   - Example: `https://docs.google.com/spreadsheets/d/`**`1ABC123_spreadsheet_id_here`**`/edit`
-   - Save this ID for later use in the Apps Script configuration
+1. Export bookings to CSV from the admin panel
+2. Manually import the CSV into Google Sheets
+3. Create calendar events manually from the exported data
 
-## Step 3: Set Up Google Calendar
+## Contact for Assistance
 
-1. Go to [Google Calendar](https://calendar.google.com/)
-
-2. Create a new calendar specifically for CCS bookings (optional but recommended):
-   - Click the "+" next to "Other calendars"
-   - Select "Create new calendar"
-   - Name it "CCS Bookings"
-   - Add a description and set the timezone
-   - Click "Create calendar"
-
-3. Get your Calendar ID:
-   - In the left sidebar, hover over your new calendar
-   - Click the three dots (...) that appear
-   - Select "Settings and sharing"
-   - Scroll down to the "Integrate calendar" section
-   - Copy the "Calendar ID" (it looks like an email address)
-   - Save this ID for later use in the Apps Script configuration
-
-## Step 4: Create the Google Apps Script Project
-
-1. Go to [Google Apps Script](https://script.google.com/)
-
-2. Click "+ New project" to create a new Apps Script project
-
-3. Delete any code that appears by default
-
-4. Name your project "CCS Booking Handler" (click on "Untitled project" at the top)
-
-5. Copy and paste the contents of `apps_script/BookingHandler.js` into the editor
-
-6. Update the CONFIG object at the top of the script with:
-   - Your Calendar ID
-   - Your Spreadsheet ID
-   - Your email address for admin notifications
-   - Your timezone if needed
-
-7. Save the project (File > Save or Ctrl+S)
-
-## Step 5: Deploy as Web App
-
-1. In your Apps Script project, click on "Deploy" > "New deployment"
-
-2. Select "Web app" as the deployment type
-
-3. Configure the following:
-   - Description: "CCS Booking Handler v1"
-   - Execute as: "Me" (your Google account)
-   - Who has access: "Anyone"
-
-4. Click "Deploy"
-
-5. You'll be prompted to authorize the script to access your Google account:
-   - Click "Authorize access"
-   - Choose your Google account
-   - If warned about "unverified app", click "Advanced" and "Go to CCS Booking Handler (unsafe)"
-   - Click "Allow" to grant the permissions
-
-6. Copy the "Web app URL" that is displayed after deployment
-   - It should look like: `https://script.google.com/macros/s/[LONG_ID]/exec`
-   - This is the URL your website will use to send booking data
-
-## Step 6: Update Your Website with the App URL
-
-1. Open `docs/js/main.js` in your code editor
-
-2. Find this line:
-   ```javascript
-   const response = await fetch('https://script.google.com/macros/s/YOUR_APPS_SCRIPT_DEPLOYMENT_ID/exec', {
-   ```
-
-3. Replace `YOUR_APPS_SCRIPT_DEPLOYMENT_ID` with the deployment ID from your Web app URL
-   - The deployment ID is the long string between `/s/` and `/exec`
-
-4. Save the file and commit your changes to GitHub
-
-## Testing the Integration
-
-1. Submit a test booking through your website
-
-2. Check your Google Calendar to see if the appointment was created
-
-3. Check your Google Sheet to see if the booking was recorded
-
-4. Check your email for booking notifications
-
-If any step fails, check the troubleshooting section in the `COMPLETE_INTEGRATION_GUIDE.md` file. 
+If you decide to implement Google API integration in the future, please contact the developer for assistance with setting up the necessary components. 
